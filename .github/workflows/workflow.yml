@@ -15,10 +15,13 @@ jobs:
     steps:
       - name: Checkout main
         uses: actions/checkout@main
+
+      - name: Update SHA
+        run: echo $GITHUB_SHA > $GITHUB_WORKSPACE/site/_meta
         
       - name: Build Docker Image
         working-directory: App/buybc-app
-        run: docker build . --file Dockerfile --t registry.digitalocean.com/buybc/buybc-app:$(date +%s)
+        run: docker build --file Dockerfile --t registry.digitalocean.com/buybc/buybc-app:$(echo $GITHUB_SHA | head -c7) .
       
       - name: Install doctl
         uses: digitalocean/action-doctl@v2
