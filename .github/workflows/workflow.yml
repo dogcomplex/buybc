@@ -9,9 +9,8 @@ on:
 jobs:
 
   build:
-    name: Build Docker Image
+    name: Build, Push Image, and Deploy
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout main
         uses: actions/checkout@main
