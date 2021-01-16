@@ -13,12 +13,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout main
+        uses: actions/checkout@main
+        
       - name: Build Docker Image
-        uses: actions/checkout@v2
         working-directory: App/buybc-app
         run: docker build . --file Dockerfile --t registry.digitalocean.com/quartech/buybc-app:$(date +%s)
       
-      - name: install doctl
+      - name: Install doctl
         uses: digitalocean/action-doctl@v2
         with:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
