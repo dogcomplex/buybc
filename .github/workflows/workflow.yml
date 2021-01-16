@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@main
 
       - name: Update SHA
-        run: echo $GITHUB_SHA > $GITHUB_WORKSPACE/site/_meta
+        run: echo $GITHUB_SHA > $GITHUB_WORKSPACE/_meta
         
       - name: Build Docker Image
         working-directory: App/buybc-app
