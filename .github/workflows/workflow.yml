@@ -21,7 +21,7 @@ jobs:
         
       - name: Build Docker Image
         working-directory: App/buybc-app
-        run: docker build --file Dockerfile --t registry.digitalocean.com/buybc/buybc-app:$(echo $GITHUB_SHA | head -c7) .
+        run: docker build --file Dockerfile --tag registry.digitalocean.com/buybc/buybc-app:good .
       
       - name: Install doctl
         uses: digitalocean/action-doctl@v2
