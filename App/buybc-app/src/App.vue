@@ -1,28 +1,37 @@
 <template>
-  <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
-  </div>
+  <v-app>
+    <v-app-bar app color="#234075" dark>
+      <div class="d-flex align-center">
+        <v-img
+          class="mr-4"
+          contain
+          src="@/assets/gov_bc_logo.svg"
+          transition="scale-transition"
+          width="120"
+        />
+        <h3>BuyBC Issue Credential Demo</h3>
+      </div>
+    </v-app-bar>
+
+    <v-main>
+      <Landing />
+    </v-main>
+  </v-app>
 </template>
 
-<script>
-import HelloWorld from './components/HelloWorld.vue'
+<script lang="ts">
+import Vue from "vue";
+import Landing from "@/views/Landing.vue";
 
-export default {
-  name: 'App',
+export default Vue.extend({
+  name: "App",
+
   components: {
-    HelloWorld
-  }
-}
-</script>
+    Landing,
+  },
 
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-</style>
+  data: () => ({
+    //
+  }),
+});
+</script>
