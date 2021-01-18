@@ -1,6 +1,14 @@
 <template>
   <v-dialog v-model="dialog" width="700">
     <v-card>
+      <v-card-title>
+        <v-img
+          src="../assets/buyBC_Logo_Horiz_RGB-300x119.png"
+          contain
+          height="100"
+          max-height="100"
+        />
+      </v-card-title>
       <v-card-title v-if="selectedStatus === 'Active'" class="headline">
         Issue BuyBC Credential
       </v-card-title>

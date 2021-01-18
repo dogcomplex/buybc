@@ -1,8 +1,9 @@
 <template>
-  <v-container>
+  <v-container fluid>
     <LoadingComponent :is-loading="isLoading"></LoadingComponent>
     <v-row class="text-center mt-4">
       <v-col>
+        <v-img src="../assets/buy-bc-logo.png" contain height="100" max-height="100"/>
         <h1 class="font-weight-light display-0">
           Search for a business below
         </h1>
