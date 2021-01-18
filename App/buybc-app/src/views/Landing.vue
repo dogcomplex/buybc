@@ -76,7 +76,7 @@
     <IssueCredentialModal
       :is-visible="isIssueModalVisible"
       :entity-name="selectedOrgData.name"
-      :registration-id="selectedOrgData.id"
+      :registration-id="selectedOrgData.registrationId"
       @emit-close="toggleIssueModal"
     />
   </v-container>
@@ -162,9 +162,14 @@ export default class Landing extends Vue {
     this.credTableData = [];
     axios({
       method: "GET",
-      url: BASE_URL + "/v3/search/topic/facets?name=" + searchText,
+      url:
+        BASE_URL +
+        "/v3/search/topic?name=" +
+        searchText +
+        "&inactive=false&latest=true&revoked=false",
     }).then((res: any) => {
-      this.searchResults = res.data.objects.results;
+      console.log(res);
+      this.searchResults = res.data.results;
       this.hasSearched = true;
       this.isLoading = false;
     });

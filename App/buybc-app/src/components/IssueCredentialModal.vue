@@ -235,8 +235,8 @@ export default class IssueCredentialModal extends Vue {
         {
           attributes: {
             entity_name: this.name,
-            corp_num: this.id,
-            license_number: this.licenseNumber,
+            corp_num: this.registrationId,
+            license_number: "1",
             license_type: this.selectedLicenseType,
             status: this.selectedStatus,
             status_reason: this.selectedStatusReason,
@@ -248,7 +248,7 @@ export default class IssueCredentialModal extends Vue {
             expiry_date: "",
           },
           schema: "license.buybc.gov.bc.ca",
-          version: "1.0.0",
+          version: "0.1.0",
         },
       ],
       headers: {
