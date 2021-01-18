@@ -1,33 +1,26 @@
 <template>
   <v-app>
-    <v-app-bar app color="#234075" dark>
-      <div class="d-flex align-center">
-        <v-img
-          class="mr-4"
-          contain
-          src="@/assets/gov_bc_logo.svg"
-          transition="scale-transition"
-          width="120"
-        />
-        <h3>BuyBC Issue Credential Demo</h3>
-      </div>
-    </v-app-bar>
-
     <v-main>
-      <Landing />
+      <buybc-header/>
+      <buybc-landing/>
+      <buybc-footer/>
     </v-main>
   </v-app>
 </template>
 
 <script lang="ts">
 import Vue from "vue";
+import Header from "./views/Header.vue";
+import Footer from "./views/Footer.vue";
 import Landing from "./views/Landing.vue";
 
 export default Vue.extend({
   name: "App",
 
   components: {
-    Landing
+    'buybc-landing':Landing,
+    'buybc-footer':Footer,
+    'buybc-header':Header,
   },
 
   data: () => ({
