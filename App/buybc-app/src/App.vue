@@ -21,17 +21,17 @@
 
 <script lang="ts">
 import Vue from "vue";
-import Landing from "@/views/Landing.vue";
+import Landing from "./views/Landing.vue";
 
 export default Vue.extend({
   name: "App",
 
   components: {
-    Landing,
+    Landing
   },
 
   data: () => ({
     //
-  }),
+  })
 });
 </script>

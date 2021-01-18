@@ -162,10 +162,6 @@ export default class Landing extends Vue {
     this.credTableData = [];
     axios({
       method: "GET",
-      // url:
-      // "http://localhost:8080/api/v3/search/topic/facets?name=" +
-      // searchText +
-      // "&inactive=false",
       url: BASE_URL + "/v3/search/topic/facets?name=" + searchText,
     }).then((res: any) => {
       this.searchResults = res.data.objects.results;
