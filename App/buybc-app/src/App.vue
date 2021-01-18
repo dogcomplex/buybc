@@ -1,10 +1,10 @@
 <template>
   <v-app>
+    <buybc-header />
     <v-main>
-      <buybc-header/>
-      <buybc-landing/>
-      <buybc-footer/>
+      <buybc-landing />
     </v-main>
+    <buybc-footer />
   </v-app>
 </template>
 
@@ -18,13 +18,13 @@ export default Vue.extend({
   name: "App",
 
   components: {
-    'buybc-landing':Landing,
-    'buybc-footer':Footer,
-    'buybc-header':Header,
+    "buybc-landing": Landing,
+    "buybc-footer": Footer,
+    "buybc-header": Header,
   },
 
   data: () => ({
     //
-  })
+  }),
 });
 </script>
