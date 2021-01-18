@@ -8,7 +8,7 @@ RUN npm install
 COPY . .
 
 # build app for production with minification
-RUN npm run build
+RUN npm run build --prod
 
 # production stage
 FROM nginx:stable-alpine as production-stage
