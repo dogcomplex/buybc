@@ -39,22 +39,48 @@
           return-object
           single-line
         ></v-select>
-        <h2 v-if="orgTableLoaded" class="font-weight-light display-0 mt-6">
+        <h2
+          v-if="orgTableLoaded"
+          v-show="!isLoading"
+          class="font-weight-light display-0 mt-6"
+        >
           Registration Details for {{ selectedOrgData.name }}
         </h2>
         <v-data-table
-          v-show="orgTableLoaded"
+          v-if="orgTableLoaded"
+          v-show="!isLoading"
           :items-per-page="20"
           :headers="orgTableHeaders"
           :items="orgTableData"
           class="elevation-1 mt-4"
         >
         </v-data-table>
-        <h2 v-if="credTableLoaded" class="font-weight-light display-0 mt-8">
+        <content-placeholders
+          class="mt-4"
+          v-show="isLoading && hasSelected"
+          :rounded="true"
+        >
+          <content-placeholders-heading />
+          <content-placeholders-text :lines="5" />
+        </content-placeholders>
+        <content-placeholders
+          class="mt-4"
+          v-show="isLoading && hasSelected"
+          :rounded="true"
+        >
+          <content-placeholders-heading />
+          <content-placeholders-text :lines="5" />
+        </content-placeholders>
+        <h2
+          v-if="credTableLoaded"
+          v-show="!isLoading"
+          class="font-weight-light display-0 mt-8"
+        >
           Credentials held by {{ selectedOrgData.name }}
         </h2>
         <v-data-table
-          v-show="credTableLoaded"
+          v-if="credTableLoaded"
+          v-show="!isLoading"
           :items-per-page="20"
           :sort-by="['effectiveDate']"
           :sort-desc="['true']"
@@ -68,11 +94,12 @@
         </v-data-table>
 
         <v-btn
-          v-show="orgTableLoaded"
+          v-if="orgTableLoaded"
+          v-show="!isLoading"
           class="warning mt-5"
           @click="viewIssueModal()"
-          ><v-icon class="mr-2" medium>mdi-license</v-icon> Issue credential to
-          {{ selectedOrgData.name }}</v-btn
+          ><v-icon class="mr-2" medium>mdi-license</v-icon> Issue a credential
+          to {{ selectedOrgData.name }}</v-btn
         >
       </v-col>
     </v-row>

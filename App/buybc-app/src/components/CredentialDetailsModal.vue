@@ -7,12 +7,17 @@
       </v-card-title>
       <v-card-text>
         <v-data-table
+          v-show="!isLoading"
           :items-per-page="20"
           :headers="credDetailsHeaders"
           :items="credDetailsData"
           class="elevation-1 mt-4"
         >
         </v-data-table>
+        <content-placeholders class="mt-4" v-show="isLoading" :rounded="true">
+          <content-placeholders-heading />
+          <content-placeholders-text :lines="5" />
+        </content-placeholders>
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
