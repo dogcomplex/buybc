@@ -61,7 +61,7 @@
           :rounded="true"
         >
           <content-placeholders-heading />
-          <content-placeholders-text :lines="5" />
+          <content-placeholders-text :lines="30" />
         </content-placeholders>
         <content-placeholders
           class="mt-4"
@@ -69,7 +69,7 @@
           :rounded="true"
         >
           <content-placeholders-heading />
-          <content-placeholders-text :lines="5" />
+          <content-placeholders-text :lines="30" />
         </content-placeholders>
         <h2
           v-if="credTableLoaded"

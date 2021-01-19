@@ -16,7 +16,7 @@
         </v-data-table>
         <content-placeholders class="mt-4" v-show="isLoading" :rounded="true">
           <content-placeholders-heading />
-          <content-placeholders-text :lines="5" />
+          <content-placeholders-text :lines="20" />
         </content-placeholders>
       </v-card-text>
       <v-card-actions>
