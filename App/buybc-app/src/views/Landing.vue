@@ -3,7 +3,12 @@
     <LoadingComponent :is-loading="isLoading"></LoadingComponent>
     <v-row class="text-center mt-4">
       <v-col>
-        <v-img src="../assets/buy-bc-logo.png" contain height="100" max-height="100"/>
+        <v-img
+          src="../assets/buy-bc-logo.png"
+          contain
+          height="100"
+          max-height="100"
+        />
         <h1 class="font-weight-light display-0">
           Search for a business below
         </h1>
@@ -50,6 +55,8 @@
         <v-data-table
           v-show="credTableLoaded"
           :items-per-page="20"
+          :sort-by="['effectiveDate']"
+          :sort-desc="['true']"
           :headers="credTableHeaders"
           :items="credTableData"
           class="elevation-1 mt-4"
@@ -109,15 +116,17 @@ export default class Landing extends Vue {
   private selectedOrg: {
     attributes: any[];
     names: any[];
-    credential_id: string;
-    topic: { source_id: string; id: number };
+    source_id: string;
+    id: number;
+    credential_set: { id: number };
     inactive: boolean;
     revoked: boolean;
   } = {
     attributes: [],
     names: [],
-    credential_id: "",
-    topic: { source_id: "", id: -1 },
+    source_id: "",
+    credential_set: { id: -1 },
+    id: -1,
     inactive: true,
     revoked: false,
   };
@@ -165,12 +174,12 @@ export default class Landing extends Vue {
       method: "GET",
       url:
         BASE_URL +
-        "/v3/search/topic?name=" +
+        "/v4/search/topic/facets?q=" +
         searchText +
-        "&inactive=false&latest=true&revoked=false",
+        "&issuer_id=&category:entity_type=&inactive=false",
     }).then((res: any) => {
-      console.log(res);
-      this.searchResults = res.data.results;
+      console.log("SEARCH RESULTS: ", res);
+      this.searchResults = res.data.objects.results;
       this.hasSearched = true;
       this.isLoading = false;
     });
@@ -196,11 +205,10 @@ export default class Landing extends Vue {
         value: attribute.value,
       });
     });
-    this.selectedOrgData.id = this.selectedOrg.topic.id;
+    this.selectedOrgData.id = this.selectedOrg.id;
     this.selectedOrgData.name = this.selectedOrg.names[0].text;
-    (this.selectedOrgData.registrationId = this.selectedOrg.topic.source_id),
-      (this.selectedOrgData.credentialId = this.selectedOrg.credential_id);
-    this.selectedOrgData.revoked = this.selectedOrg.revoked;
+    (this.selectedOrgData.registrationId = this.selectedOrg.source_id),
+      (this.selectedOrgData.revoked = this.selectedOrg.revoked);
     this.selectedOrgData.active = !this.selectedOrg.inactive;
     this.loadOrgTable();
   }
@@ -213,10 +221,6 @@ export default class Landing extends Vue {
     this.orgTableData.push({
       text: "Registration ID",
       value: this.selectedOrgData.registrationId,
-    });
-    this.orgTableData.push({
-      text: "Credential ID",
-      value: this.selectedOrgData.credentialId,
     });
     this.orgTableData.push({
       text: "Active?",

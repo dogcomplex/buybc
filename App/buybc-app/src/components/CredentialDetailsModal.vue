@@ -1,5 +1,6 @@
 <template>
   <v-dialog v-model="dialog" width="700">
+    <LoadingComponent :is-loading="isLoading"></LoadingComponent>
     <v-card>
       <v-card-title class="headline">
         {{ details.registrationType }}
@@ -15,8 +16,12 @@
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <!--TODO: ADD TO REVOKE BUTTON v-if="details.issuer === 'BuyBC'" -->
-        <v-btn class="button mb-2 error" @click="revoke()">Revoke</v-btn>
+        <v-btn
+          v-if="details.registrationType === 'license.buybc.gov.bc.ca'"
+          class="button mb-2 error"
+          @click="revoke()"
+          >Revoke</v-btn
+        >
         <v-btn class="button mb-2" @click="dialog = false">Close</v-btn>
       </v-card-actions>
     </v-card>
@@ -27,10 +32,15 @@
 /* eslint-disable */
 import { Component, Vue, Prop, Watch, Emit } from "vue-property-decorator";
 import axios from "axios";
+import { BASE_URL } from "../app-config";
+import LoadingComponent from "./Loading.vue";
 
-@Component
+@Component({
+  components: { LoadingComponent },
+})
 export default class CredentialDetailsModal extends Vue {
   private dialog: boolean = false;
+  private isLoading: boolean = false;
   private credDetailsHeaders = [
     {
       text: "Property",
@@ -50,6 +60,7 @@ export default class CredentialDetailsModal extends Vue {
     data: {
       credentials: any[];
       create_timestamp: string;
+      latest_credential_id: number;
     };
     issuer: string;
     lastUpdated: string;
@@ -83,27 +94,50 @@ export default class CredentialDetailsModal extends Vue {
         property: "Issuer",
         value: this.details.issuer,
       },
-      {
-        property: "Active?",
-        value: !this.details.data.credentials[0].inactive,
-      },
-      {
-        property: "Revoked?",
-        value: this.details.data.credentials[0].revoked,
-      },
-      {
-        property: "Created At",
-        value: this.formatDate(this.details.data.create_timestamp),
-      },
-      {
-        property: "Last Updated",
-        value: this.details.lastUpdated,
-      },
-      {
-        property: "Effective Date",
-        value: this.details.effectiveDate,
-      },
     ];
+    if (this.details.registrationType === "license.buybc.gov.bc.ca") {
+      this.isLoading = true;
+      axios({
+        url:
+          BASE_URL +
+          "/credential/" +
+          this.details.data.latest_credential_id +
+          "/formatted",
+      }).then((res) => {
+        res.data.attributes.forEach((attribute: any) => {
+          if (attribute.type !== "corp_num")
+            this.credDetailsData.push({
+              property: this.formatAttribute(attribute.type),
+              value: attribute.value,
+            });
+        });
+        this.isLoading = false;
+        console.log("CRED DETAILS: ", res);
+      });
+    } else {
+      this.credDetailsData.push(
+        {
+          property: "Active?",
+          value: !this.details.data.credentials[0].inactive,
+        },
+        {
+          property: "Revoked?",
+          value: this.details.data.credentials[0].revoked,
+        },
+        {
+          property: "Created At",
+          value: this.formatDate(this.details.data.create_timestamp),
+        },
+        {
+          property: "Last Updated",
+          value: this.details.lastUpdated,
+        },
+        {
+          property: "Effective Date",
+          value: this.details.effectiveDate,
+        }
+      );
+    }
   }
 
   private formatDate(date: any) {
@@ -116,6 +150,14 @@ export default class CredentialDetailsModal extends Vue {
     if (day.length < 2) day = "0" + day;
 
     return [year, month, day].join("-");
+  }
+
+  private formatAttribute(str: string) {
+    let frags = str.split("_");
+    for (let i = 0; i < frags.length; i++) {
+      frags[i] = frags[i].charAt(0).toUpperCase() + frags[i].slice(1);
+    }
+    return frags.join(" ");
   }
 
   /*

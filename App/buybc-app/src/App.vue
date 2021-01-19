@@ -9,6 +9,7 @@
 </template>
 
 <script lang="ts">
+/* eslint-disable */
 import Vue from "vue";
 import Header from "./views/Header.vue";
 import Footer from "./views/Footer.vue";
