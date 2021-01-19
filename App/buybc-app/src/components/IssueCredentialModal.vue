@@ -330,7 +330,6 @@ export default class IssueCredentialModal extends Vue {
 
   private sendPayload() {
     axios({
-      // TODO: TEST THIS
       method: "POST",
       url: ISSUE_URL,
       data: [
@@ -395,11 +394,4 @@ export default class IssueCredentialModal extends Vue {
     return;
   }
 }
-
-/*
-  TODO: EVERYTHING GOING WRONG RIGHT NOW
-  TODO: Footer not filling width of page
-  TODO: CORS not working
-  TODO: Validation on issue credential fields
-*/
 </script>

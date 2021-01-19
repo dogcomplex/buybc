@@ -189,7 +189,7 @@ export default class CredentialDetailsModal extends Vue {
     return {
       businessName: this.credDetailsData[0].value,
       registrationId: this.credDetailsData[1].value,
-      licenseNumber: this.credDetailsData[3].value, // TODO: BROKEN
+      licenseNumber: this.credDetailsData[3].value,
       licenseType: this.credDetailsData[4].value,
       status: "Inactive",
       attributes: this.credAttributes,
