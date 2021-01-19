@@ -22,7 +22,7 @@
     <v-row class="text-center" align="center" justify="center">
       <v-col cols="7">
         <v-text-field v-model="name" label="Name"> </v-text-field>
-        <v-btn block class="primary mt-2" @click="getBusinessResults(name)"
+        <v-btn class="primary mt-2" @click="getBusinessResults(name)"
           >Search OrgBook for Business</v-btn
         >
         <v-select
@@ -68,7 +68,6 @@
 
         <v-btn
           v-show="orgTableLoaded"
-          block
           class="warning mt-5"
           @click="viewIssueModal()"
           ><v-icon medium>mdi-license</v-icon> Issue credential to {{ selectedOrgData.name }}</v-btn
