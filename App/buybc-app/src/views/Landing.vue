@@ -3,7 +3,12 @@
     <LoadingComponent :is-loading="isLoading"></LoadingComponent>
     <v-row class="text-center mt-4">
       <v-col>
-        <v-img src="../assets/buy-bc-logo.png" contain height="100" max-height="100"/>
+        <v-img
+          src="../assets/buy-bc-logo.png"
+          contain
+          height="100"
+          max-height="100"
+        />
         <h1 class="font-weight-light display-0">
           Search for a business below
         </h1>
@@ -17,8 +22,9 @@
     <v-row class="text-center" align="center" justify="center">
       <v-col cols="7">
         <v-text-field v-model="name" label="Name"> </v-text-field>
-        <v-btn block class="primary mt-2" @click="getBusinessResults(name)"
-          >Search OrgBook for Business</v-btn
+        <v-btn class="primary mt-2" @click="getBusinessResults(name)"
+          ><v-icon medium class="mr-2">mdi-magnify</v-icon> Search OrgBook for
+          Business</v-btn
         >
         <v-select
           v-show="hasSearched"
@@ -33,23 +39,51 @@
           return-object
           single-line
         ></v-select>
-        <h2 v-if="orgTableLoaded" class="font-weight-light display-0 mt-6">
+        <h2
+          v-if="orgTableLoaded"
+          v-show="!isLoading"
+          class="font-weight-light display-0 mt-6"
+        >
           Registration Details for {{ selectedOrgData.name }}
         </h2>
         <v-data-table
-          v-show="orgTableLoaded"
+          v-if="orgTableLoaded"
+          v-show="!isLoading"
           :items-per-page="20"
           :headers="orgTableHeaders"
           :items="orgTableData"
           class="elevation-1 mt-4"
         >
         </v-data-table>
-        <h2 v-if="credTableLoaded" class="font-weight-light display-0 mt-8">
+        <content-placeholders
+          class="mt-4"
+          v-show="isLoading && hasSelected"
+          :rounded="true"
+        >
+          <content-placeholders-heading />
+          <content-placeholders-text :lines="30" />
+        </content-placeholders>
+        <content-placeholders
+          class="mt-4"
+          v-show="isLoading && hasSelected"
+          :rounded="true"
+        >
+          <content-placeholders-heading />
+          <content-placeholders-text :lines="30" />
+        </content-placeholders>
+        <h2
+          v-if="credTableLoaded"
+          v-show="!isLoading"
+          class="font-weight-light display-0 mt-8"
+        >
           Credentials held by {{ selectedOrgData.name }}
         </h2>
         <v-data-table
-          v-show="credTableLoaded"
+          v-if="credTableLoaded"
+          v-show="!isLoading"
           :items-per-page="20"
+          :sort-by="['effectiveDate']"
+          :sort-desc="['true']"
           :headers="credTableHeaders"
           :items="credTableData"
           class="elevation-1 mt-4"
@@ -58,13 +92,38 @@
             <v-btn @click="viewDetailModal(item)">View</v-btn>
           </template>
         </v-data-table>
-
+        <v-alert
+          class="mt-2"
+          v-show="hasIssuedCredential"
+          outlined
+          text
+          type="success"
+        >
+          <v-row align="center">
+            <v-col>{{ successText }}</v-col>
+          </v-row>
+        </v-alert>
+        <v-alert
+          class="mt-2"
+          v-show="issueCredentialFailed"
+          outlined
+          text
+          type="error"
+        >
+          <v-row align="center">
+            <v-col
+              >Hmm, that didn't work... Something might be wrong on our end. Try
+              again in a bit.</v-col
+            >
+          </v-row>
+        </v-alert>
         <v-btn
-          v-show="orgTableLoaded"
-          block
-          class="warning mt-4"
+          v-if="orgTableLoaded"
+          v-show="!isLoading"
+          class="warning mt-5"
           @click="viewIssueModal()"
-          >Issue credential to {{ selectedOrgData.name }}</v-btn
+          ><v-icon class="mr-2" medium>mdi-license</v-icon> Issue a credential
+          to {{ selectedOrgData.name }}</v-btn
         >
       </v-col>
     </v-row>
@@ -77,8 +136,12 @@
     <IssueCredentialModal
       :is-visible="isIssueModalVisible"
       :entity-name="selectedOrgData.name"
-      :registration-id="selectedOrgData.id"
+      :registration-id="selectedOrgData.registrationId"
+      :details="issueCredentialDetails"
+      :all-credentials="credentials"
       @emit-close="toggleIssueModal"
+      @emit-success="onIssueSuccess"
+      @emit-failure="onIssueFail"
     />
   </v-container>
 </template>
@@ -101,23 +164,29 @@ import { BASE_URL } from "../app-config";
 })
 export default class Landing extends Vue {
   private isLoading = false;
+  private hasIssuedCredential = false;
+  private issueCredentialFailed = false;
   private isDetailsModalVisible = false;
   private isIssueModalVisible = false;
   private credentials: any[] = [];
   private searchResults: any[] = [];
   private name = "";
+  private issueCredentialDetails: {} = {};
+  private successText: string = "";
   private selectedOrg: {
     attributes: any[];
     names: any[];
-    credential_id: string;
-    topic: { source_id: string; id: number };
+    source_id: string;
+    id: number;
+    credential_set: { id: number };
     inactive: boolean;
     revoked: boolean;
   } = {
     attributes: [],
     names: [],
-    credential_id: "",
-    topic: { source_id: "", id: -1 },
+    source_id: "",
+    credential_set: { id: -1 },
+    id: -1,
     inactive: true,
     revoked: false,
   };
@@ -163,7 +232,7 @@ export default class Landing extends Vue {
     this.credTableData = [];
     axios({
       method: "GET",
-      url: BASE_URL + "/v3/search/topic/facets?name=" + searchText,
+      url: BASE_URL + "/v4/search/topic/facets?q=" + searchText,
     }).then((res: any) => {
       this.searchResults = res.data.objects.results;
       this.hasSearched = true;
@@ -173,6 +242,7 @@ export default class Landing extends Vue {
 
   @Watch("selectedOrg")
   private orgSelected() {
+    this.isLoading = true;
     this.orgTableData = [];
     this.orgTableHeaders = [];
     this.selectedOrgData = {
@@ -191,11 +261,10 @@ export default class Landing extends Vue {
         value: attribute.value,
       });
     });
-    this.selectedOrgData.id = this.selectedOrg.topic.id;
+    this.selectedOrgData.id = this.selectedOrg.id;
     this.selectedOrgData.name = this.selectedOrg.names[0].text;
-    (this.selectedOrgData.registrationId = this.selectedOrg.topic.source_id),
-      (this.selectedOrgData.credentialId = this.selectedOrg.credential_id);
-    this.selectedOrgData.revoked = this.selectedOrg.revoked;
+    (this.selectedOrgData.registrationId = this.selectedOrg.source_id),
+      (this.selectedOrgData.revoked = this.selectedOrg.revoked);
     this.selectedOrgData.active = !this.selectedOrg.inactive;
     this.loadOrgTable();
   }
@@ -208,10 +277,6 @@ export default class Landing extends Vue {
     this.orgTableData.push({
       text: "Registration ID",
       value: this.selectedOrgData.registrationId,
-    });
-    this.orgTableData.push({
-      text: "Credential ID",
-      value: this.selectedOrgData.credentialId,
     });
     this.orgTableData.push({
       text: "Active?",
@@ -239,15 +304,11 @@ export default class Landing extends Vue {
   }
 
   private async getCredentials() {
-    //TODO: IMPLEMENT CREDENTIAL LIST
-    this.isLoading = true;
     await axios({
       method: "GET",
       url: BASE_URL + "/topic/" + this.selectedOrgData.id + "/credentialset",
     }).then((res) => {
       this.credentials = res.data;
-      this.isLoading = false;
-      console.log("Credential set: ", this.credentials);
     });
     this.loadCredTable();
   }
@@ -255,9 +316,7 @@ export default class Landing extends Vue {
   private async loadCredTable() {
     this.credTableData = [];
     this.credentials.forEach((credential: any) => {
-      credential.credentials.forEach((cred: any) => {
-        console.log(cred);
-      });
+      credential.credentials.forEach((cred: any) => {});
     });
     this.credTableHeaders = [
       {
@@ -287,7 +346,6 @@ export default class Landing extends Vue {
       },
     ];
     this.credentials.forEach(async (credential: any) => {
-      console.log(credential);
       await axios({
         method: "GET",
         url:
@@ -295,7 +353,6 @@ export default class Landing extends Vue {
           "/v3/credentialtype/" +
           credential.credentials[0].credential_type.id,
       }).then((res: any) => {
-        console.log(res);
         this.credTableData.push({
           issuer: res.data.issuer.name,
           effectiveDate: this.formatDate(credential.first_effective_date),
@@ -304,13 +361,13 @@ export default class Landing extends Vue {
             credential.credentials[0].credential_type.description,
           data: credential,
         });
+        this.isLoading = false;
       });
     });
     this.credTableLoaded = true;
   }
 
   private viewDetailModal(credential: any) {
-    console.log(credential);
     this.selectedCredential = credential;
     this.isDetailsModalVisible = true;
   }
@@ -328,9 +385,23 @@ export default class Landing extends Vue {
   }
 
   private openRevokeModal(details: any) {
-    this.toggleCredModal();
+    this.issueCredentialDetails = details;
     this.viewIssueModal();
-    console.log(details);
+  }
+
+  private onIssueSuccess(action: string) {
+    action === "ISSUE"
+      ? (this.successText = "BuyBC Credential Issued!")
+      : (this.successText = "BuyBC Credential Revoked!");
+    this.toggleIssueModal();
+    this.isLoading = true;
+    this.hasIssuedCredential = true;
+    this.getCredentials();
+  }
+
+  private onIssueFail() {
+    this.toggleIssueModal();
+    this.issueCredentialFailed = true;
   }
 
   private formatDate(date: any) {
