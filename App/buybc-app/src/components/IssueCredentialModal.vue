@@ -344,12 +344,16 @@ export default class IssueCredentialModal extends Vue {
       headers: {
         "Content-Type": "application/json",
       },
-    }).then((res) => {
-      console.log("/issue-credential ", res);
-      this.isLoading = false;
-      this.close();
-      this.emitSuccess();
-    });
+    })
+      .then((res) => {
+        console.log("/issue-credential ", res);
+        this.isLoading = false;
+        this.close();
+        this.emitSuccess();
+      })
+      .catch((err: any) => {
+        this.emitFailure();
+      });
   }
 
   private close() {
@@ -371,6 +375,11 @@ export default class IssueCredentialModal extends Vue {
 
   @Emit()
   private emitSuccess() {
+    return;
+  }
+
+  @Emit()
+  private emitFailure() {
     return;
   }
 }
