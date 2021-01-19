@@ -190,6 +190,11 @@ export default class CredentialDetailsModal extends Vue {
   }
 
   @Emit()
+  private emitFailure() {
+    return;
+  }
+
+  @Emit()
   private emitRevoke() {
     return {
       businessName: this.credDetailsData[0].value,

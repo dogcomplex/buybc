@@ -92,7 +92,33 @@
             <v-btn @click="viewDetailModal(item)">View</v-btn>
           </template>
         </v-data-table>
-
+        <v-alert
+          class="mt-2"
+          v-show="hasIssuedCredential"
+          outlined
+          dismissible
+          text
+          type="success"
+        >
+          <v-row align="center">
+            <v-col>BuyBC Credential Issued!</v-col>
+          </v-row>
+        </v-alert>
+        <v-alert
+          class="mt-2"
+          v-show="issueCredentialFailed"
+          outlined
+          dismissible
+          text
+          type="error"
+        >
+          <v-row align="center">
+            <v-col
+              >Hmm, that didn't work... Something might be wrong on our end. Try
+              again in a bit.</v-col
+            >
+          </v-row>
+        </v-alert>
         <v-btn
           v-if="orgTableLoaded"
           v-show="!isLoading"
@@ -117,6 +143,7 @@
       :all-credentials="credentials"
       @emit-close="toggleIssueModal"
       @emit-success="onIssueSuccess"
+      @emit-failure="onIssueFail"
     />
   </v-container>
 </template>
@@ -139,6 +166,8 @@ import { BASE_URL } from "../app-config";
 })
 export default class Landing extends Vue {
   private isLoading = false;
+  private hasIssuedCredential = false;
+  private issueCredentialFailed = false;
   private isDetailsModalVisible = false;
   private isIssueModalVisible = false;
   private credentials: any[] = [];
@@ -364,7 +393,13 @@ export default class Landing extends Vue {
   private onIssueSuccess() {
     this.toggleIssueModal();
     this.isLoading = true;
+    this.hasIssuedCredential = true;
     this.getCredentials();
+  }
+
+  private onIssueFail() {
+    this.toggleIssueModal();
+    this.issueCredentialFailed = true;
   }
 
   private formatDate(date: any) {
