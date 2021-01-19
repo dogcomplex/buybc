@@ -23,7 +23,8 @@
       <v-col cols="7">
         <v-text-field v-model="name" label="Name"> </v-text-field>
         <v-btn class="primary mt-2" @click="getBusinessResults(name)"
-          >Search OrgBook for Business</v-btn
+          ><v-icon medium class="mr-2">mdi-magnify</v-icon> Search OrgBook for
+          Business</v-btn
         >
         <v-select
           v-show="hasSearched"
@@ -70,7 +71,8 @@
           v-show="orgTableLoaded"
           class="warning mt-5"
           @click="viewIssueModal()"
-          ><v-icon medium>mdi-license</v-icon> Issue credential to {{ selectedOrgData.name }}</v-btn
+          ><v-icon class="mr-2" medium>mdi-license</v-icon> Issue credential to
+          {{ selectedOrgData.name }}</v-btn
         >
       </v-col>
     </v-row>
@@ -174,12 +176,8 @@ export default class Landing extends Vue {
     this.credTableData = [];
     axios({
       method: "GET",
-      url:
-        BASE_URL +
-        "/v4/search/topic/facets?q=" +
-        searchText
+      url: BASE_URL + "/v4/search/topic/facets?q=" + searchText,
     }).then((res: any) => {
-      console.log("SEARCH RESULTS: ", res);
       this.searchResults = res.data.objects.results;
       this.hasSearched = true;
       this.isLoading = false;
@@ -255,7 +253,6 @@ export default class Landing extends Vue {
       url: BASE_URL + "/topic/" + this.selectedOrgData.id + "/credentialset",
     }).then((res) => {
       this.credentials = res.data;
-      console.log("Credential set: ", this.credentials);
     });
     this.loadCredTable();
   }
@@ -263,9 +260,7 @@ export default class Landing extends Vue {
   private async loadCredTable() {
     this.credTableData = [];
     this.credentials.forEach((credential: any) => {
-      credential.credentials.forEach((cred: any) => {
-        console.log(cred);
-      });
+      credential.credentials.forEach((cred: any) => {});
     });
     this.credTableHeaders = [
       {
@@ -295,7 +290,6 @@ export default class Landing extends Vue {
       },
     ];
     this.credentials.forEach(async (credential: any) => {
-      console.log(credential);
       await axios({
         method: "GET",
         url:
@@ -303,7 +297,6 @@ export default class Landing extends Vue {
           "/v3/credentialtype/" +
           credential.credentials[0].credential_type.id,
       }).then((res: any) => {
-        console.log(res);
         this.credTableData.push({
           issuer: res.data.issuer.name,
           effectiveDate: this.formatDate(credential.first_effective_date),
@@ -319,7 +312,6 @@ export default class Landing extends Vue {
   }
 
   private viewDetailModal(credential: any) {
-    console.log(credential);
     this.selectedCredential = credential;
     this.isDetailsModalVisible = true;
   }
@@ -340,7 +332,6 @@ export default class Landing extends Vue {
     this.issueCredentialDetails = details;
     this.toggleCredModal();
     this.viewIssueModal();
-    console.log("DETAILS: ", details);
   }
 
   private formatDate(date: any) {

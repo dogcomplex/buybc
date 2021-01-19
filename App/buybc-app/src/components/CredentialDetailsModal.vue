@@ -81,7 +81,6 @@ export default class CredentialDetailsModal extends Vue {
 
   @Watch("details")
   private async loadCredDetails() {
-    console.log("NEW DATA RECIEVED!", this.details);
     this.credDetailsData = [
       {
         property: "Organization",
@@ -114,7 +113,6 @@ export default class CredentialDetailsModal extends Vue {
         });
         this.credAttributes = res.data;
         this.isLoading = false;
-        console.log("CRED DETAILS: ", res);
       });
     } else {
       this.credDetailsData.push(

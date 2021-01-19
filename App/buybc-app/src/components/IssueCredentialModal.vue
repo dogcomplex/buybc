@@ -212,13 +212,10 @@ export default class IssueCredentialModal extends Vue {
 
   @Watch("details")
   private onDetailsChanged() {
-    console.log("NEW DETAILS: ", this.details);
     this.licenseNumber = this.details.licenseNumber;
     this.selectedLicenseType = this.details.licenseType;
     this.selectedStatus = this.details.status;
     this.attributes = this.details.attributes;
-    console.log("ATTRIBUTES: ", this.attributes);
-    console.log("ALL CREDENTIALS: ", this.allCredentials);
     this.credentials = this.allCredentials;
   }
 
@@ -247,7 +244,6 @@ export default class IssueCredentialModal extends Vue {
               "/latest",
           }).then((res: any) => {
             // Get attributes of BuyBC credential to check if it's active
-            console.log("Attributes: ", res.data);
             if (res.data.attributes[2].value === "Active") {
               // Found an active BuyBC credential for this holder
               console.log("Holder has an active credential");
@@ -277,11 +273,6 @@ export default class IssueCredentialModal extends Vue {
     hasActiveCredential: boolean,
     duplicateLicenseNumber: boolean
   ) {
-    console.log(
-      "PARAMS RECIEVED: ",
-      hasActiveCredential,
-      duplicateLicenseNumber
-    );
     /* Business Logic:
       - Check if VC does not already exist or has existed in the past for the current holder with the SAME LICENSE NUMBER before creating VC
       - A holder can only have one valid BuyBC VC at a time, may have more than one revoked or expired VCs
@@ -289,9 +280,7 @@ export default class IssueCredentialModal extends Vue {
     */
 
     // Business Logic
-    console.log("Checking active status...");
     if (hasActiveCredential) {
-      console.log("Checked active credential");
       this.isLoading = false;
       this.hasErrors = true;
       this.errorMessage =
@@ -299,7 +288,6 @@ export default class IssueCredentialModal extends Vue {
         this.name +
         ". If you would like to issue a new BuyBC license, revoke the current license first.";
     } else if (duplicateLicenseNumber) {
-      console.log("Checked duplicate license number");
       this.isLoading = false;
       this.hasErrors = true;
       this.errorMessage =
@@ -314,7 +302,6 @@ export default class IssueCredentialModal extends Vue {
 
   private async revokeCredential(licenseNumberExists: boolean) {
     if (!licenseNumberExists) {
-      console.log("Checked if license exists");
       // License with license number does not exist
       this.isLoading = false;
       this.hasErrors = true;
@@ -358,7 +345,7 @@ export default class IssueCredentialModal extends Vue {
         "Content-Type": "application/json",
       },
     }).then((res) => {
-      console.log(res);
+      console.log("/issue-credential ", res);
       this.isLoading = false;
       this.close();
     });
@@ -387,5 +374,7 @@ export default class IssueCredentialModal extends Vue {
   TODO: Modals not closing after function completes
   TODO: Footer not filling width of page
   TODO: CORS not working
+  TODO: Refine loader
+  TODO: Validation on issue credential fields
 */
 </script>
