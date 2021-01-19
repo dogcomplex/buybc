@@ -348,6 +348,7 @@ export default class IssueCredentialModal extends Vue {
       console.log("/issue-credential ", res);
       this.isLoading = false;
       this.close();
+      this.emitSuccess();
     });
   }
 
@@ -359,6 +360,7 @@ export default class IssueCredentialModal extends Vue {
     this.selectedStatus = "Active";
     this.selectedStatusReason = "";
     this.licenseEffectiveDate = new Date().toISOString().substr(0, 10);
+    this.selectedLicenseType = "";
     this.emitClose();
   }
 
@@ -378,7 +380,6 @@ export default class IssueCredentialModal extends Vue {
   TODO: Modals not closing after function completes
   TODO: Footer not filling width of page
   TODO: CORS not working
-  TODO: Refine loader
   TODO: Validation on issue credential fields
 */
 </script>

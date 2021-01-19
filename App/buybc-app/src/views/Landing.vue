@@ -116,6 +116,7 @@
       :details="issueCredentialDetails"
       :all-credentials="credentials"
       @emit-close="toggleIssueModal"
+      @emit-success="onIssueSuccess"
     />
   </v-container>
 </template>
@@ -357,10 +358,13 @@ export default class Landing extends Vue {
 
   private openRevokeModal(details: any) {
     this.issueCredentialDetails = details;
-    // this.isIssueModalVisible = true;
-    this.isDetailsModalVisible = false;
-    this.toggleCredModal();
     this.viewIssueModal();
+  }
+
+  private onIssueSuccess() {
+    this.toggleIssueModal();
+    this.isLoading = true;
+    this.getCredentials();
   }
 
   private formatDate(date: any) {
