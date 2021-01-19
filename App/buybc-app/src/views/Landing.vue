@@ -69,9 +69,9 @@
         <v-btn
           v-show="orgTableLoaded"
           block
-          class="warning mt-4"
+          class="warning mt-5"
           @click="viewIssueModal()"
-          >Issue credential to {{ selectedOrgData.name }}</v-btn
+          ><v-icon medium>mdi-license</v-icon> Issue credential to {{ selectedOrgData.name }}</v-btn
         >
       </v-col>
     </v-row>
