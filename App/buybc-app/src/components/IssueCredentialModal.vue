@@ -355,6 +355,10 @@ export default class IssueCredentialModal extends Vue {
     this.dialog = false;
     this.hasErrors = false;
     this.errorMessage = "";
+    this.licenseNumber = "";
+    this.selectedStatus = "Active";
+    this.selectedStatusReason = "";
+    this.licenseEffectiveDate = new Date().toISOString().substr(0, 10);
     this.emitClose();
   }
 

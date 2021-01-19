@@ -357,6 +357,8 @@ export default class Landing extends Vue {
 
   private openRevokeModal(details: any) {
     this.issueCredentialDetails = details;
+    // this.isIssueModalVisible = true;
+    this.isDetailsModalVisible = false;
     this.toggleCredModal();
     this.viewIssueModal();
   }
