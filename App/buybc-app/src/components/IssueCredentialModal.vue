@@ -29,6 +29,7 @@
           <v-col
             ><v-text-field
               label="Registration ID"
+              :rules="[rules.required]"
               v-model="id"
               outlined
               readonly
@@ -39,6 +40,7 @@
           <v-col>
             <v-text-field
               label="License Number"
+              :rules="[rules.required]"
               v-model="licenseNumber"
               outlined
             ></v-text-field>
@@ -47,6 +49,7 @@
             <v-select
               outlined
               :items="licenseType"
+              :rules="[rules.required]"
               v-model="selectedLicenseType"
               label="License Type"
             >
@@ -58,6 +61,7 @@
             <v-select
               outlined
               :items="status"
+              :rules="[rules.required]"
               v-model="selectedStatus"
               label="License Status"
             >
@@ -71,6 +75,7 @@
                   ? activeStatusReason
                   : inactiveStatusReason
               "
+              :rules="[rules.required]"
               v-model="selectedStatusReason"
               :disabled="selectedStatus === ''"
               label="Status Reason"
@@ -93,6 +98,7 @@
                 <v-text-field
                   v-model="licenseEffectiveDate"
                   label="License Effective Date"
+                  :rules="[rules.required]"
                   outlined
                   readonly
                   v-bind="attrs"
@@ -169,6 +175,7 @@ export default class IssueCredentialModal extends Vue {
 
   private menu: boolean = false;
   private dialog: boolean = false;
+  private action: string = "ISSUE";
 
   private isLoading: boolean = false;
   private attributes: any[] = [];
@@ -193,6 +200,10 @@ export default class IssueCredentialModal extends Vue {
 
   private hasErrors = false;
   private errorMessage: string = "";
+
+  private rules = {
+    required: (value: string) => !!value || "Field required.",
+  };
 
   @Watch("isVisible")
   private onVisibilityChanged() {
@@ -225,6 +236,7 @@ export default class IssueCredentialModal extends Vue {
   }
 
   private async getOtherCredentialDetails(issue: boolean) {
+    issue ? (this.action = "ISSUE") : (this.action = "REVOKE");
     this.isLoading = true;
     var hasActiveCredential = false;
     var duplicateLicenseNumber = false;
@@ -375,7 +387,7 @@ export default class IssueCredentialModal extends Vue {
 
   @Emit()
   private emitSuccess() {
-    return;
+    return this.action;
   }
 
   @Emit()
@@ -386,7 +398,6 @@ export default class IssueCredentialModal extends Vue {
 
 /*
   TODO: EVERYTHING GOING WRONG RIGHT NOW
-  TODO: Modals not closing after function completes
   TODO: Footer not filling width of page
   TODO: CORS not working
   TODO: Validation on issue credential fields

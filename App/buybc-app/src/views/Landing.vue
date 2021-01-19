@@ -101,7 +101,7 @@
           type="success"
         >
           <v-row align="center">
-            <v-col>BuyBC Credential Issued!</v-col>
+            <v-col>{{ successText }}</v-col>
           </v-row>
         </v-alert>
         <v-alert
@@ -174,6 +174,7 @@ export default class Landing extends Vue {
   private searchResults: any[] = [];
   private name = "";
   private issueCredentialDetails: {} = {};
+  private successText: string = "";
   private selectedOrg: {
     attributes: any[];
     names: any[];
@@ -390,7 +391,10 @@ export default class Landing extends Vue {
     this.viewIssueModal();
   }
 
-  private onIssueSuccess() {
+  private onIssueSuccess(action: string) {
+    action === "ISSUE"
+      ? (this.successText = "BuyBC Credential Issued!")
+      : (this.successText = "BuyBC Credential Revoked!");
     this.toggleIssueModal();
     this.isLoading = true;
     this.hasIssuedCredential = true;
