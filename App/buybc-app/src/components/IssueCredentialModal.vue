@@ -1,5 +1,6 @@
 <template>
   <v-dialog v-model="dialog" width="700">
+    <LoadingComponent :is-loading="isLoading"></LoadingComponent>
     <v-card>
       <v-card-title>
         <v-img
@@ -20,7 +21,7 @@
           <v-col>
             <v-text-field
               label="Business Name"
-              :value="name"
+              v-model="name"
               outlined
               readonly
             ></v-text-field>
@@ -28,7 +29,7 @@
           <v-col
             ><v-text-field
               label="Registration ID"
-              :value="id"
+              v-model="id"
               outlined
               readonly
             ></v-text-field
@@ -38,7 +39,7 @@
           <v-col>
             <v-text-field
               label="License Number"
-              :value="licenseNumber"
+              v-model="licenseNumber"
               outlined
             ></v-text-field>
           </v-col>
@@ -112,19 +113,28 @@
                 </v-btn>
               </v-date-picker>
             </v-menu>
+            <v-alert v-show="hasErrors" prominent type="error">
+              <v-row align="center">
+                <v-col class="grow">
+                  {{ errorMessage }}
+                </v-col>
+              </v-row>
+            </v-alert>
           </v-col>
         </v-row>
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <!-- TODO: CHANGE SENDPAYLOAD TO ISSUECREDENTIAL -->
         <v-btn
           v-if="selectedStatus === 'Active'"
           class="button mb-2 primary"
-          @click="sendPayload()"
+          @click="getOtherCredentialDetails(true)"
           >Issue</v-btn
         >
-        <v-btn v-else class="button mb-2 error" @click="issueCredential()"
+        <v-btn
+          v-else
+          class="button mb-2 error"
+          @click="getOtherCredentialDetails(false)"
           >Revoke</v-btn
         >
         <v-btn class="button mb-2" @click="dialog = false">Cancel</v-btn>
@@ -137,17 +147,32 @@
 /* eslint-disable */
 import { Component, Vue, Prop, Watch, Emit } from "vue-property-decorator";
 import axios from "axios";
-import { ISSUE_URL } from "../app-config";
+import { BASE_URL, ISSUE_URL } from "../app-config";
+import LoadingComponent from "./Loading.vue";
 
-@Component
+@Component({
+  components: {
+    LoadingComponent,
+  },
+})
 export default class IssueCredentialModal extends Vue {
   @Prop() isVisible!: boolean;
   @Prop() entityName!: string;
   @Prop() registrationId!: string;
+  @Prop() details!: {
+    licenseNumber: string;
+    status: string;
+    licenseType: string;
+    attributes: any[];
+  };
+  @Prop() allCredentials!: any[];
 
   private menu: boolean = false;
-
   private dialog: boolean = false;
+
+  private isLoading: boolean = false;
+  private attributes: any[] = [];
+  private credentials: any[] = [];
   private name: string = "";
   private id: string = "";
   private licenseNumber: string = "";
@@ -172,6 +197,7 @@ export default class IssueCredentialModal extends Vue {
   @Watch("isVisible")
   private onVisibilityChanged() {
     this.dialog = this.isVisible;
+    this.credentials = this.allCredentials;
   }
 
   @Watch("entityName")
@@ -184,53 +210,122 @@ export default class IssueCredentialModal extends Vue {
     this.id = this.registrationId;
   }
 
+  @Watch("details")
+  private onDetailsChanged() {
+    console.log("NEW DETAILS: ", this.details);
+    this.licenseNumber = this.details.licenseNumber;
+    this.selectedLicenseType = this.details.licenseType;
+    this.selectedStatus = this.details.status;
+    this.attributes = this.details.attributes;
+    console.log("ATTRIBUTES: ", this.attributes);
+    console.log("ALL CREDENTIALS: ", this.allCredentials);
+    this.credentials = this.allCredentials;
+  }
+
   @Watch("dialog")
   private onDialogChange(val: boolean) {
     val || this.close();
   }
 
-  private issueCredential() {
+  private async getOtherCredentialDetails(issue: boolean) {
+    this.isLoading = true;
+    var hasActiveCredential = false;
+    var duplicateLicenseNumber = false;
+    var licenseNumberExists = false;
+
+    for (let i = 0; i < this.credentials.length; i++) {
+      for (let k = 0; k < this.credentials[i].credentials.length; k++) {
+        // Search credentials belonging to this holder
+        if (this.credentials[i].credentials[k].credential_type.id === 15) {
+          // Credential comes from BuyBC
+          await axios({
+            method: "GET",
+            url:
+              BASE_URL +
+              "/v3/credential/" +
+              this.credentials[i].credentials[k].credential_id +
+              "/latest",
+          }).then((res: any) => {
+            // Get attributes of BuyBC credential to check if it's active
+            console.log("Attributes: ", res.data);
+            if (res.data.attributes[2].value === "Active") {
+              // Found an active BuyBC credential for this holder
+              console.log("Holder has an active credential");
+              hasActiveCredential = true;
+            }
+            if (res.data.attributes[0].value === this.licenseNumber) {
+              console.log("Found a duplicate license number ");
+              duplicateLicenseNumber = true;
+              if (res.data.attributes[2].value === "Active") {
+                licenseNumberExists = true;
+                console.log("Found an active license ready to be revoked");
+              }
+            }
+          });
+        }
+      }
+    }
+    // Once we have analyzed other credentials, call issue credential
+    if (issue) {
+      this.issueCredential(hasActiveCredential, duplicateLicenseNumber);
+    } else {
+      this.revokeCredential(licenseNumberExists);
+    }
+  }
+
+  private issueCredential(
+    hasActiveCredential: boolean,
+    duplicateLicenseNumber: boolean
+  ) {
+    console.log(
+      "PARAMS RECIEVED: ",
+      hasActiveCredential,
+      duplicateLicenseNumber
+    );
     /* Business Logic:
       - Check if VC does not already exist or has existed in the past for the current holder with the SAME LICENSE NUMBER before creating VC
       - A holder can only have one valid BuyBC VC at a time, may have more than one revoked or expired VCs
       - If a credential has been expired or revoked it can NOT be reactivated. IAF will need to create a new license and new license number under a new BuyBC agreement
     */
-    if (this.selectedStatus === "Active") {
-      // Issue credential
-      /* Search for VC TODO: Figure this out */
-      if (true /* License exists */) {
-        this.hasErrors = true;
-        this.errorMessage =
-          "Cannot issue BuyBC license. An active BuyBC license already exists for " +
-          this.name +
-          ". If you would like to issue a new BuyBC license, revoke the current license first.";
-      } else if (
-        false /* License with license number has existed in the past */
-      ) {
-        this.hasErrors = true;
-        this.errorMessage =
-          "Cannot issue BuyBC license. A BuyBC license with license number " +
-          this.licenseNumber +
-          "has already been created. Please enter a new license number to create a new BuyBC license.";
-      } else {
-        /* license does not exist and license number has not been created in the past*/
-        this.sendPayload();
-      }
+
+    // Business Logic
+    console.log("Checking active status...");
+    if (hasActiveCredential) {
+      console.log("Checked active credential");
+      this.isLoading = false;
+      this.hasErrors = true;
+      this.errorMessage =
+        "Cannot issue BuyBC license. An active BuyBC license already exists for " +
+        this.name +
+        ". If you would like to issue a new BuyBC license, revoke the current license first.";
+    } else if (duplicateLicenseNumber) {
+      console.log("Checked duplicate license number");
+      this.isLoading = false;
+      this.hasErrors = true;
+      this.errorMessage =
+        "Cannot issue BuyBC license. A BuyBC license with license number " +
+        this.licenseNumber +
+        " has already been created. Please enter a new license number to create a new BuyBC license.";
     } else {
-      // Revoke credential
-      /* Search for VC TODO: Figure this out. */
-      if (false /* License does not exist */) {
-        this.hasErrors = true;
-        this.errorMessage =
-          "Cannot revoke BuyBC license. No license with license number " +
-          this.licenseNumber +
-          " exists for " +
-          this.name +
-          ".";
-      } else {
-        /* license exists */
-        this.sendPayload();
-      }
+      /* license does not exist and license number has not been created in the past*/
+      this.sendPayload();
+    }
+  }
+
+  private async revokeCredential(licenseNumberExists: boolean) {
+    if (!licenseNumberExists) {
+      console.log("Checked if license exists");
+      // License with license number does not exist
+      this.isLoading = false;
+      this.hasErrors = true;
+      this.errorMessage =
+        "Cannot revoke BuyBC license. No active BuyBC license with license number " +
+        this.licenseNumber +
+        " exists for " +
+        this.name +
+        ".";
+    } else {
+      this.sendPayload();
     }
   }
 
@@ -244,7 +339,7 @@ export default class IssueCredentialModal extends Vue {
           attributes: {
             entity_name: this.name,
             corp_num: this.registrationId,
-            license_number: "1",
+            license_number: this.licenseNumber,
             license_type: this.selectedLicenseType,
             status: this.selectedStatus,
             status_reason: this.selectedStatusReason,
@@ -264,16 +359,16 @@ export default class IssueCredentialModal extends Vue {
       },
     }).then((res) => {
       console.log(res);
+      this.isLoading = false;
+      this.close();
     });
   }
 
   private close() {
     this.dialog = false;
+    this.hasErrors = false;
+    this.errorMessage = "";
     this.emitClose();
-  }
-
-  private revoke() {
-    console.log("REVOKING!");
   }
 
   @Emit()
@@ -286,4 +381,11 @@ export default class IssueCredentialModal extends Vue {
     return;
   }
 }
+
+/*
+  TODO: EVERYTHING GOING WRONG RIGHT NOW
+  TODO: Modals not closing after function completes
+  TODO: Footer not filling width of page
+  TODO: CORS not working
+*/
 </script>

@@ -41,6 +41,7 @@ import LoadingComponent from "./Loading.vue";
 export default class CredentialDetailsModal extends Vue {
   private dialog: boolean = false;
   private isLoading: boolean = false;
+  private credAttributes: any[] = [];
   private credDetailsHeaders = [
     {
       text: "Property",
@@ -111,6 +112,7 @@ export default class CredentialDetailsModal extends Vue {
               value: attribute.value,
             });
         });
+        this.credAttributes = res.data;
         this.isLoading = false;
         console.log("CRED DETAILS: ", res);
       });
@@ -189,18 +191,11 @@ export default class CredentialDetailsModal extends Vue {
     return {
       businessName: this.credDetailsData[0].value,
       registrationId: this.credDetailsData[1].value,
-      licenseNumber: "",
-      licenseType: "",
+      licenseNumber: this.credDetailsData[3].value, // TODO: BROKEN
+      licenseType: this.credDetailsData[4].value,
       status: "Inactive",
+      attributes: this.credAttributes,
     };
   }
-
-  /* Tomorrow:
-        TODO: Issue local test BuyBC credential to view fields
-        TODO: Fetch license ID from fields
-        TODO: Send license ID to revoke credential
-        TODO: Figure out a way to see if credential already exists or has existed in the past
-        TODO: Figure out a way to find if a credential is active
-  */
 }
 </script>

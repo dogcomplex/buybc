@@ -29,3 +29,8 @@ export default Vue.extend({
   }),
 });
 </script>
+<style lang="scss">
+  .buybc-footer {
+    width: auto !important
+  }
+</style>

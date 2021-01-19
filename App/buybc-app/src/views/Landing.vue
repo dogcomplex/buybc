@@ -85,6 +85,8 @@
       :is-visible="isIssueModalVisible"
       :entity-name="selectedOrgData.name"
       :registration-id="selectedOrgData.registrationId"
+      :details="issueCredentialDetails"
+      :all-credentials="credentials"
       @emit-close="toggleIssueModal"
     />
   </v-container>
@@ -113,6 +115,7 @@ export default class Landing extends Vue {
   private credentials: any[] = [];
   private searchResults: any[] = [];
   private name = "";
+  private issueCredentialDetails: {} = {};
   private selectedOrg: {
     attributes: any[];
     names: any[];
@@ -175,8 +178,7 @@ export default class Landing extends Vue {
       url:
         BASE_URL +
         "/v4/search/topic/facets?q=" +
-        searchText +
-        "&issuer_id=&category:entity_type=&inactive=false",
+        searchText
     }).then((res: any) => {
       console.log("SEARCH RESULTS: ", res);
       this.searchResults = res.data.objects.results;
@@ -187,6 +189,7 @@ export default class Landing extends Vue {
 
   @Watch("selectedOrg")
   private orgSelected() {
+    this.isLoading = true;
     this.orgTableData = [];
     this.orgTableHeaders = [];
     this.selectedOrgData = {
@@ -248,14 +251,11 @@ export default class Landing extends Vue {
   }
 
   private async getCredentials() {
-    //TODO: IMPLEMENT CREDENTIAL LIST
-    this.isLoading = true;
     await axios({
       method: "GET",
       url: BASE_URL + "/topic/" + this.selectedOrgData.id + "/credentialset",
     }).then((res) => {
       this.credentials = res.data;
-      this.isLoading = false;
       console.log("Credential set: ", this.credentials);
     });
     this.loadCredTable();
@@ -313,6 +313,7 @@ export default class Landing extends Vue {
             credential.credentials[0].credential_type.description,
           data: credential,
         });
+        this.isLoading = false;
       });
     });
     this.credTableLoaded = true;
@@ -337,9 +338,10 @@ export default class Landing extends Vue {
   }
 
   private openRevokeModal(details: any) {
+    this.issueCredentialDetails = details;
     this.toggleCredModal();
     this.viewIssueModal();
-    console.log(details);
+    console.log("DETAILS: ", details);
   }
 
   private formatDate(date: any) {
