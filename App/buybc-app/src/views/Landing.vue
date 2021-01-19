@@ -96,7 +96,6 @@
           class="mt-2"
           v-show="hasIssuedCredential"
           outlined
-          dismissible
           text
           type="success"
         >
@@ -108,7 +107,6 @@
           class="mt-2"
           v-show="issueCredentialFailed"
           outlined
-          dismissible
           text
           type="error"
         >
