@@ -4,8 +4,6 @@
       <v-row dense no-gutters>
         <v-col cols="6">
           <v-card flat tile color="#7B9C3D" >
-                        <v-card-text class="white--text"><h4>FUNDING PROVIDED BY:</h4></v-card-text>
-
             <v-card-text>
               <v-img
                 contain
@@ -15,7 +13,6 @@
         </v-col>
         <v-col cols="6">
           <v-card padless tile flat color="#7B9C3D" width="100%">
-            <v-card-text class="white--text"><h4>DEVELOPED BY:</h4></v-card-text>
             <v-card-text>
               <a href="https://www.quartech.com" target="_blank"
                 ><v-img
