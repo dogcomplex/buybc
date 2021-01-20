@@ -16,14 +16,14 @@
     </v-row>
     <v-row class="text-center">
       <v-col>
-        Upon searching you will be able to select a business from the dropdown.
+        After searching you will be able to select a business from the dropdown that appears.
       </v-col>
     </v-row>
     <v-row class="text-center" align="center" justify="center">
       <v-col cols="7">
         <v-text-field v-model="name" label="Name"> </v-text-field>
         <v-btn class="primary mt-2" @click="getBusinessResults(name)"
-          ><v-icon medium class="mr-2">mdi-magnify</v-icon> Search OrgBook for
+          ><v-icon medium class="mr-2">mdi-magnify</v-icon> Search for
           Business</v-btn
         >
         <v-select
