@@ -189,7 +189,7 @@ export default class IssueCredentialModal extends Vue {
   private selectedStatus: string = "Active";
   private status: string[] = ["Active", "Inactive"];
 
-  private selectedStatusReason: string = "";
+  private selectedStatusReason: string = "License Approved";
   private activeStatusReason: string[] = ["License Approved"];
   private inactiveStatusReason: string[] = [
     "License Expired",
@@ -373,7 +373,7 @@ export default class IssueCredentialModal extends Vue {
     this.errorMessage = "";
     this.licenseNumber = "";
     this.selectedStatus = "Active";
-    this.selectedStatusReason = "";
+    this.selectedStatusReason = "License Approved";
     this.licenseEffectiveDate = new Date().toISOString().substr(0, 10);
     this.selectedLicenseType = "";
     this.emitClose();

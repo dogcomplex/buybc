@@ -16,7 +16,8 @@
     </v-row>
     <v-row class="text-center">
       <v-col>
-        After searching you will be able to select a business from the dropdown that appears.
+        After searching you will be able to select a business from the dropdown
+        that appears.
       </v-col>
     </v-row>
     <v-row class="text-center" align="center" justify="center">
@@ -29,6 +30,7 @@
         <v-select
           v-show="hasSearched"
           class="mt-4"
+          ref="select"
           v-model="selectedOrg"
           :items="searchResults"
           item-text="names[0].text"
@@ -236,6 +238,12 @@ export default class Landing extends Vue {
     }).then((res: any) => {
       this.searchResults = res.data.objects.results;
       this.hasSearched = true;
+      console.log(this.$refs.select);
+      this.$nextTick(() => {
+        (this.$refs.select as Vue & {
+          focus: () => any;
+        }).focus();
+      });
       this.isLoading = false;
     });
   }
@@ -308,6 +316,7 @@ export default class Landing extends Vue {
       method: "GET",
       url: BASE_URL + "/topic/" + this.selectedOrgData.id + "/credentialset",
     }).then((res) => {
+      console.log("/credentialset", res);
       this.credentials = res.data;
     });
     this.loadCredTable();
@@ -335,6 +344,16 @@ export default class Landing extends Vue {
         sortable: false,
       },
       {
+        text: "BuyBC License Status",
+        value: "licenseStatus",
+        sortable: false,
+      },
+      {
+        text: "BuyBC License Status Reason",
+        value: "licenseStatusReason",
+        sortable: false,
+      },
+      {
         text: "Last Updated",
         value: "lastUpdated",
         sortable: true,
@@ -352,11 +371,31 @@ export default class Landing extends Vue {
           BASE_URL +
           "/v3/credentialtype/" +
           credential.credentials[0].credential_type.id,
-      }).then((res: any) => {
+      }).then(async (res: any) => {
+        var licenseStatus = "";
+        var licenseStatusReason = "";
+
+        if (credential.credentials[0].credential_type.id === 15) {
+          // BuyBC License, get active attributes
+          await axios({
+            method: "GET",
+            url:
+              BASE_URL +
+              "/v3/credential/" +
+              credential.credentials[0].credential_id +
+              "/latest",
+          }).then((res: any) => {
+            console.log("Got cred details: ", res);
+            licenseStatus = res.data.attributes[2].value;
+            licenseStatusReason = res.data.attributes[4].value;
+          });
+        }
         this.credTableData.push({
           issuer: res.data.issuer.name,
           effectiveDate: this.formatDate(credential.first_effective_date),
           lastUpdated: this.formatDate(credential.update_timestamp),
+          licenseStatus: licenseStatus,
+          licenseStatusReason: licenseStatusReason,
           registrationType:
             credential.credentials[0].credential_type.description,
           data: credential,
