@@ -90,6 +90,11 @@
           :items="credTableData"
           class="elevation-1 mt-4"
         >
+          <template v-slot:[`item.licenseStatus`]="{ item }">
+            <v-chip :color="getColor(item.licenseStatus)" dark>
+              {{ item.licenseStatus }}
+            </v-chip>
+          </template>
           <template v-slot:[`item.details`]="{ item }">
             <v-btn @click="viewDetailModal(item)">View</v-btn>
           </template>
@@ -244,6 +249,14 @@ export default class Landing extends Vue {
         this.selectedOrgData.registrationId,
       "_blank"
     );
+  }
+
+  private getColor(status: string) {
+    if (status === "Active") {
+      return "#4CAF50";
+    } else {
+      return "#F44336";
+    }
   }
 
   private getBusinessResults(searchText: string) {
@@ -477,6 +490,7 @@ export default class Landing extends Vue {
         licenseNumber: res.data.attributes[0].value,
         licenseType: res.data.attributes[1].value,
         status: "Inactive",
+        statusReason: "",
         attributes: res.data.attributes,
       };
       this.viewIssueModal();

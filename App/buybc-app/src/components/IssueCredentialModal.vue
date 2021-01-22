@@ -23,6 +23,7 @@
               <v-text-field
                 label="Business Name"
                 v-model="name"
+                :rules="[rules.required]"
                 outlined
                 readonly
               ></v-text-field>
@@ -170,6 +171,7 @@ export default class IssueCredentialModal extends Vue {
   @Prop() details!: {
     licenseNumber: string;
     status: string;
+    statusReason: string;
     licenseType: string;
     attributes: any[];
   };
@@ -228,6 +230,7 @@ export default class IssueCredentialModal extends Vue {
     this.licenseNumber = this.details.licenseNumber;
     this.selectedLicenseType = this.details.licenseType;
     this.selectedStatus = this.details.status;
+    this.selectedStatusReason = this.details.statusReason;
     this.attributes = this.details.attributes;
     this.credentials = this.allCredentials;
   }
