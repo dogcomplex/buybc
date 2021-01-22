@@ -93,6 +93,14 @@
           <template v-slot:[`item.details`]="{ item }">
             <v-btn @click="viewDetailModal(item)">View</v-btn>
           </template>
+          <template v-slot:[`item.actions`]="{ item }">
+            <v-btn
+              :disabled="item.licenseStatus === 'Inactive'"
+              class="error"
+              @click="revokeCredential(item)"
+              >Revoke</v-btn
+            >
+          </template>
         </v-data-table>
         <div v-if="credTableLoaded" v-show="!isLoading" class="mt-2">
           You can view a list of all credentials held by
@@ -139,7 +147,6 @@
       :is-visible="isDetailsModalVisible"
       :details="selectedCredential"
       @emit-close="toggleCredModal"
-      @emit-revoke="openRevokeModal"
     />
     <IssueCredentialModal
       :is-visible="isIssueModalVisible"
@@ -379,6 +386,11 @@ export default class Landing extends Vue {
         value: "details",
         sortable: false,
       },
+      {
+        text: "Actions",
+        value: "actions",
+        sortable: false,
+      },
     ];
     this.credentials.forEach(async (credential: any) => {
       await axios({
@@ -451,9 +463,25 @@ export default class Landing extends Vue {
     this.isIssueModalVisible = !this.isIssueModalVisible;
   }
 
-  private openRevokeModal(details: any) {
-    this.issueCredentialDetails = details;
-    this.viewIssueModal();
+  private revokeCredential(details: any) {
+    this.isLoading = true;
+    axios({
+      url:
+        BASE_URL +
+        "/credential/" +
+        details.data.latest_credential_id +
+        "/formatted",
+    }).then((res: any) => {
+      console.log("DATA: ", res.data);
+      this.issueCredentialDetails = {
+        licenseNumber: res.data.attributes[0].value,
+        licenseType: res.data.attributes[1].value,
+        status: "Inactive",
+        attributes: res.data.attributes,
+      };
+      this.viewIssueModal();
+      this.isLoading = false;
+    });
   }
 
   private onIssueSuccess(action: string) {

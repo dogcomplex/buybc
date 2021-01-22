@@ -17,72 +17,74 @@
         Revoke BuyBC Credential
       </v-card-title>
       <v-card-text>
-        <v-row class="mt-2">
-          <v-col>
-            <v-text-field
-              label="Business Name"
-              v-model="name"
-              outlined
-              readonly
-            ></v-text-field>
-          </v-col>
-          <v-col
-            ><v-text-field
-              label="Registration ID"
-              :rules="[rules.required]"
-              v-model="id"
-              outlined
-              readonly
-            ></v-text-field
-          ></v-col>
-        </v-row>
-        <v-row>
-          <v-col>
-            <v-text-field
-              label="License Number"
-              :rules="[rules.required]"
-              v-model="licenseNumber"
-              outlined
-            ></v-text-field>
-          </v-col>
-          <v-col>
-            <v-select
-              outlined
-              :items="licenseType"
-              :rules="[rules.required]"
-              v-model="selectedLicenseType"
-              label="License Type"
-            >
-            </v-select>
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-col>
-            <v-select
-              outlined
-              :items="status"
-              :rules="[rules.required]"
-              v-model="selectedStatus"
-              label="License Status"
-            >
-            </v-select>
-          </v-col>
-          <v-col>
-            <v-select
-              outlined
-              :items="
-                selectedStatus === 'Active'
-                  ? activeStatusReason
-                  : inactiveStatusReason
-              "
-              :rules="[rules.required]"
-              v-model="selectedStatusReason"
-              :disabled="selectedStatus === ''"
-              label="Status Reason"
-            >
-            </v-select>
-          </v-col>
-        </v-row>
+        <v-form ref="form" lazy-validation>
+          <v-row class="mt-2">
+            <v-col>
+              <v-text-field
+                label="Business Name"
+                v-model="name"
+                outlined
+                readonly
+              ></v-text-field>
+            </v-col>
+            <v-col
+              ><v-text-field
+                label="Registration ID"
+                :rules="[rules.required]"
+                v-model="id"
+                outlined
+                readonly
+              ></v-text-field
+            ></v-col>
+          </v-row>
+          <v-row>
+            <v-col>
+              <v-text-field
+                label="License Number"
+                :rules="[rules.required]"
+                v-model="licenseNumber"
+                outlined
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-select
+                outlined
+                :items="licenseType"
+                :rules="[rules.required]"
+                v-model="selectedLicenseType"
+                label="License Type"
+              >
+              </v-select>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
+              <v-select
+                outlined
+                :items="status"
+                :rules="[rules.required]"
+                v-model="selectedStatus"
+                label="License Status"
+              >
+              </v-select>
+            </v-col>
+            <v-col>
+              <v-select
+                outlined
+                :items="
+                  selectedStatus === 'Active'
+                    ? activeStatusReason
+                    : inactiveStatusReason
+                "
+                :rules="[rules.required]"
+                v-model="selectedStatusReason"
+                :disabled="selectedStatus === ''"
+                label="Status Reason"
+              >
+              </v-select>
+            </v-col>
+          </v-row>
+        </v-form>
         <v-row>
           <v-col>
             <v-menu
@@ -290,41 +292,48 @@ export default class IssueCredentialModal extends Vue {
       - A holder can only have one valid BuyBC VC at a time, may have more than one revoked or expired VCs
       - If a credential has been expired or revoked it can NOT be reactivated. IAF will need to create a new license and new license number under a new BuyBC agreement
     */
-
-    // Business Logic
-    if (hasActiveCredential) {
-      this.isLoading = false;
-      this.hasErrors = true;
-      this.errorMessage =
-        "Cannot issue BuyBC license. An active BuyBC license already exists for " +
-        this.name +
-        ". If you would like to issue a new BuyBC license, revoke the current license first.";
-    } else if (duplicateLicenseNumber) {
-      this.isLoading = false;
-      this.hasErrors = true;
-      this.errorMessage =
-        "Cannot issue BuyBC license. A BuyBC license with license number " +
-        this.licenseNumber +
-        " has already been created. Please enter a new license number to create a new BuyBC license.";
+    if ((this.$refs.form as Vue & { validate: () => boolean }).validate()) {
+      // Business Logic
+      if (hasActiveCredential) {
+        this.isLoading = false;
+        this.hasErrors = true;
+        this.errorMessage =
+          "Cannot issue BuyBC license. An active BuyBC license already exists for " +
+          this.name +
+          ". If you would like to issue a new BuyBC license, revoke the current license first.";
+      } else if (duplicateLicenseNumber) {
+        this.isLoading = false;
+        this.hasErrors = true;
+        this.errorMessage =
+          "Cannot issue BuyBC license. A BuyBC license with license number " +
+          this.licenseNumber +
+          " has already been created. Please enter a new license number to create a new BuyBC license.";
+      } else {
+        /* license does not exist and license number has not been created in the past*/
+        this.sendPayload();
+      }
     } else {
-      /* license does not exist and license number has not been created in the past*/
-      this.sendPayload();
+      this.isLoading = false;
     }
   }
 
   private async revokeCredential(licenseNumberExists: boolean) {
-    if (!licenseNumberExists) {
-      // License with license number does not exist
-      this.isLoading = false;
-      this.hasErrors = true;
-      this.errorMessage =
-        "Cannot revoke BuyBC license. No active BuyBC license with license number " +
-        this.licenseNumber +
-        " exists for " +
-        this.name +
-        ".";
+    if ((this.$refs.form as Vue & { validate: () => boolean }).validate()) {
+      if (!licenseNumberExists) {
+        // License with license number does not exist
+        this.isLoading = false;
+        this.hasErrors = true;
+        this.errorMessage =
+          "Cannot revoke BuyBC license. No active BuyBC license with license number " +
+          this.licenseNumber +
+          " exists for " +
+          this.name +
+          ".";
+      } else {
+        this.sendPayload();
+      }
     } else {
-      this.sendPayload();
+      this.isLoading = false;
     }
   }
 

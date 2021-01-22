@@ -21,12 +21,6 @@
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn
-          v-if="details.registrationType === 'license.buybc.gov.bc.ca'"
-          class="button mb-2 error"
-          @click="revoke()"
-          >Revoke</v-btn
-        >
         <v-btn class="button mb-2" @click="dialog = false">Close</v-btn>
       </v-card-actions>
     </v-card>
@@ -174,26 +168,9 @@ export default class CredentialDetailsModal extends Vue {
     this.emitClose();
   }
 
-  private revoke() {
-    this.dialog = false;
-    this.emitRevoke();
-  }
-
   @Emit()
   private emitClose() {
     return;
-  }
-
-  @Emit()
-  private emitRevoke() {
-    return {
-      businessName: this.credDetailsData[0].value,
-      registrationId: this.credDetailsData[1].value,
-      licenseNumber: this.credDetailsData[3].value,
-      licenseType: this.credDetailsData[4].value,
-      status: "Inactive",
-      attributes: this.credAttributes,
-    };
   }
 }
 </script>
