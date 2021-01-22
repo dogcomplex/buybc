@@ -411,8 +411,9 @@ export default class Landing extends Vue {
             lastUpdated: this.formatDate(credential.update_timestamp),
             licenseStatus: licenseStatus,
             licenseStatusReason: licenseStatusReason,
-            registrationType:
-              credential.credentials[0].credential_type.description,
+            registrationType: this.formatRegistrationType(
+              credential.credentials[0].credential_type.description
+            ),
             data: credential,
           });
           if (licenseStatus === "Active") {
@@ -423,6 +424,14 @@ export default class Landing extends Vue {
       });
     });
     this.credTableLoaded = true;
+  }
+
+  private formatRegistrationType(registrationType: string): string {
+    if (registrationType === "license.buybc.gov.bc.ca") {
+      return "BuyBC Logo License";
+    } else {
+      return registrationType;
+    }
   }
 
   private viewDetailModal(credential: any) {
