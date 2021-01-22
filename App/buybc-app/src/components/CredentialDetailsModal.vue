@@ -94,7 +94,7 @@ export default class CredentialDetailsModal extends Vue {
         value: this.details.issuer,
       },
     ];
-    if (this.details.registrationType === "license.buybc.gov.bc.ca") {
+    if (this.details.registrationType === "BuyBC Logo License") {
       this.isLoading = true;
       axios({
         url:

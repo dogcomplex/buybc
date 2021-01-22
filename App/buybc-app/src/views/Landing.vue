@@ -52,6 +52,7 @@
           v-if="orgTableLoaded"
           v-show="!isLoading"
           :items-per-page="20"
+          mobile-breakpoint="800"
           :headers="orgTableHeaders"
           :items="orgTableData"
           class="elevation-1 mt-4"
@@ -83,6 +84,7 @@
         <v-data-table
           v-if="credTableLoaded"
           v-show="!isLoading"
+          mobile-breakpoint="1500"
           :items-per-page="20"
           :sort-by="['effectiveDate']"
           :sort-desc="['true']"
@@ -100,7 +102,10 @@
           </template>
           <template v-slot:[`item.actions`]="{ item }">
             <v-btn
-              :disabled="item.licenseStatus === 'Inactive'"
+              :disabled="
+                item.licenseStatus === 'Inactive' ||
+                  item.licenseStatus === 'Expired'
+              "
               class="error"
               @click="revokeCredential(item)"
               >Revoke</v-btn
@@ -254,8 +259,10 @@ export default class Landing extends Vue {
   private getColor(status: string) {
     if (status === "Active") {
       return "#4CAF50";
-    } else {
+    } else if (status === "Inactive") {
       return "#F44336";
+    } else if (status === "Expired") {
+      return "#FF9800";
     }
   }
 
@@ -418,31 +425,55 @@ export default class Landing extends Vue {
 
         if (credential.credentials[0].credential_type.id === 15) {
           // BuyBC License, get active attributes
-          await axios({
-            method: "GET",
-            url:
-              BASE_URL +
-              "/v3/credential/" +
-              credential.credentials[0].credential_id +
-              "/latest",
-          }).then((res: any) => {
-            console.log("Got cred details: ", res);
-            licenseStatus = res.data.attributes[2].value;
-            licenseStatusReason = res.data.attributes[4].value;
-          });
-          this.credTableData.push({
-            issuer: res.data.issuer.name,
-            effectiveDate: this.formatDate(credential.first_effective_date),
-            lastUpdated: this.formatDate(credential.update_timestamp),
-            licenseStatus: licenseStatus,
-            licenseStatusReason: licenseStatusReason,
-            registrationType: this.formatRegistrationType(
-              credential.credentials[0].credential_type.description
-            ),
-            data: credential,
-          });
-          if (licenseStatus === "Active") {
-            this.issueButtonDisabled = true;
+          for (let k = 0; k < credential.credentials.length; k++) {
+            if (credential.credentials[k].revoked === true) {
+              // Credential has been revoked
+              await axios({
+                method: "GET",
+                url:
+                  BASE_URL + "/v3/credential/" + credential.credentials[k].id,
+              }).then((res: any) => {
+                console.log("Got revoked cred details: ", res);
+                licenseStatus = res.data.attributes[2].value;
+                licenseStatusReason = res.data.attributes[4].value;
+              });
+              this.credTableData.push({
+                issuer: res.data.issuer.name,
+                effectiveDate: this.formatDate(credential.first_effective_date),
+                lastUpdated: this.formatDate(credential.update_timestamp),
+                licenseStatus: "Expired",
+                licenseStatusReason: "Credential Revoked",
+                registrationType: this.formatRegistrationType(
+                  credential.credentials[0].credential_type.description
+                ),
+                data: credential,
+              });
+            } else {
+              // Credential is active (latest)
+              await axios({
+                method: "GET",
+                url:
+                  BASE_URL + "/v3/credential/" + credential.credentials[k].id,
+              }).then((res: any) => {
+                console.log("Got active cred details: ", res);
+                licenseStatus = res.data.attributes[2].value;
+                licenseStatusReason = res.data.attributes[4].value;
+              });
+              this.credTableData.push({
+                issuer: res.data.issuer.name,
+                effectiveDate: this.formatDate(credential.first_effective_date),
+                lastUpdated: this.formatDate(credential.update_timestamp),
+                licenseStatus: licenseStatus,
+                licenseStatusReason: licenseStatusReason,
+                registrationType: this.formatRegistrationType(
+                  credential.credentials[0].credential_type.description
+                ),
+                data: credential,
+              });
+              if (licenseStatus === "Active") {
+                this.issueButtonDisabled = true;
+              }
+            }
           }
         }
         this.isLoading = false;
@@ -521,12 +552,16 @@ export default class Landing extends Vue {
     var d = new Date(date),
       month = "" + (d.getMonth() + 1),
       day = "" + d.getDate(),
-      year = d.getFullYear();
+      year = d.getFullYear(),
+      hour = d.getHours().toString(),
+      minute = d.getMinutes().toString();
 
     if (month.length < 2) month = "0" + month;
     if (day.length < 2) day = "0" + day;
+    if (hour.length < 2) hour = "0" + hour;
+    if (minute.length < 2) minute = "0" + minute;
 
-    return [year, month, day].join("-");
+    return [year, month, day].join("-") + " " + [hour, minute].join(":");
   }
 
   private formatAttribute(str: string) {
