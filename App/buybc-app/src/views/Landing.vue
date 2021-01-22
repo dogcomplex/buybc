@@ -16,7 +16,8 @@
     </v-row>
     <v-row class="text-center">
       <v-col>
-        After searching you will be able to select a business from the dropdown that appears.
+        After searching you will be able to select a business from the dropdown
+        that appears.
       </v-col>
     </v-row>
     <v-row class="text-center" align="center" justify="center">
@@ -29,6 +30,7 @@
         <v-select
           v-show="hasSearched"
           class="mt-4"
+          ref="select"
           v-model="selectedOrg"
           :items="searchResults"
           item-text="names[0].text"
@@ -47,9 +49,11 @@
           Registration Details for {{ selectedOrgData.name }}
         </h2>
         <v-data-table
-          v-if="orgTableLoaded"
-          v-show="!isLoading"
+          :loading="isLoading"
+          loading-text="Loading details..."
+          v-show="orgTableLoaded"
           :items-per-page="20"
+          mobile-breakpoint="800"
           :headers="orgTableHeaders"
           :items="orgTableData"
           class="elevation-1 mt-4"
@@ -76,11 +80,13 @@
           v-show="!isLoading"
           class="font-weight-light display-0 mt-8"
         >
-          Credentials held by {{ selectedOrgData.name }}
+          BuyBC Licenses held by {{ selectedOrgData.name }}
         </h2>
         <v-data-table
-          v-if="credTableLoaded"
-          v-show="!isLoading"
+          :loading="isLoading"
+          loading-text="Loading licenses..."
+          v-show="credTableLoaded"
+          mobile-breakpoint="1500"
           :items-per-page="20"
           :sort-by="['effectiveDate']"
           :sort-desc="['true']"
@@ -88,10 +94,45 @@
           :items="credTableData"
           class="elevation-1 mt-4"
         >
+          <template v-slot:no-data>
+            No BuyBC licenses held by {{ selectedOrgData.name }}. Issue a
+            credential below to see it in this table.
+          </template>
+          <template v-slot:[`item.licenseStatus`]="{ item }">
+            <v-chip :color="getColor(item.licenseStatus)" dark>
+              {{ item.licenseStatus }}
+            </v-chip>
+          </template>
+          <template v-slot:[`item.credentialRevoked`]="{ item }">
+            <v-chip :color="getColor(item.credentialRevoked)" dark>
+              {{ item.credentialRevoked }}
+            </v-chip>
+          </template>
+          <template v-slot:[`item.credentialLatest`]="{ item }">
+            <v-chip :color="getColor(item.credentialLatest)" dark>
+              {{ item.credentialLatest }}
+            </v-chip>
+          </template>
           <template v-slot:[`item.details`]="{ item }">
             <v-btn @click="viewDetailModal(item)">View</v-btn>
           </template>
+          <template v-slot:[`item.actions`]="{ item }">
+            <v-btn
+              :disabled="
+                item.licenseStatus === 'Inactive' ||
+                  item.credentialRevoked === true
+              "
+              class="error"
+              @click="revokeCredential(item)"
+              >Revoke</v-btn
+            >
+          </template>
         </v-data-table>
+        <div v-if="credTableLoaded" v-show="!isLoading" class="mt-2">
+          You can view a list of all credentials held by
+          {{ selectedOrgData.name }}
+          <a @click="openOrgBook()">here.</a>
+        </div>
         <v-alert
           class="mt-2"
           v-show="hasIssuedCredential"
@@ -120,6 +161,7 @@
         <v-btn
           v-if="orgTableLoaded"
           v-show="!isLoading"
+          :disabled="issueButtonDisabled"
           class="warning mt-5"
           @click="viewIssueModal()"
           ><v-icon class="mr-2" medium>mdi-license</v-icon> Issue a credential
@@ -131,7 +173,6 @@
       :is-visible="isDetailsModalVisible"
       :details="selectedCredential"
       @emit-close="toggleCredModal"
-      @emit-revoke="openRevokeModal"
     />
     <IssueCredentialModal
       :is-visible="isIssueModalVisible"
@@ -213,6 +254,8 @@ export default class Landing extends Vue {
   private credTableHeaders: any[] = [];
   private credTableData: any[] = [];
 
+  private issueButtonDisabled: boolean = false;
+
   private orgTableLoaded = false;
   private credTableLoaded = false;
 
@@ -220,6 +263,26 @@ export default class Landing extends Vue {
   private hasSelected = false;
 
   private mounted() {}
+
+  private openOrgBook() {
+    window.open(
+      "https://dev.orgbook.gov.bc.ca/en/organization/registration.registries.ca/" +
+        this.selectedOrgData.registrationId,
+      "_blank"
+    );
+  }
+
+  private getColor(status: string) {
+    if (status === "Active") {
+      return "#4CAF50";
+    } else if (status === "Inactive") {
+      return "#F44336";
+    } else if (status.toString() === "true") {
+      return "#2196F3";
+    } else if (status.toString() === "false") {
+      return "#9E9E9E";
+    }
+  }
 
   private getBusinessResults(searchText: string) {
     this.isLoading = true;
@@ -236,6 +299,12 @@ export default class Landing extends Vue {
     }).then((res: any) => {
       this.searchResults = res.data.objects.results;
       this.hasSearched = true;
+      console.log(this.$refs.select);
+      this.$nextTick(() => {
+        (this.$refs.select as Vue & {
+          focus: () => any;
+        }).focus();
+      });
       this.isLoading = false;
     });
   }
@@ -308,6 +377,7 @@ export default class Landing extends Vue {
       method: "GET",
       url: BASE_URL + "/topic/" + this.selectedOrgData.id + "/credentialset",
     }).then((res) => {
+      console.log("/credentialset", res);
       this.credentials = res.data;
     });
     this.loadCredTable();
@@ -335,6 +405,26 @@ export default class Landing extends Vue {
         sortable: false,
       },
       {
+        text: "Credential Revoked?",
+        value: "credentialRevoked",
+        sortable: false,
+      },
+      {
+        text: "Credential Latest?",
+        value: "credentialLatest",
+        sortable: false,
+      },
+      {
+        text: "BuyBC License Status",
+        value: "licenseStatus",
+        sortable: false,
+      },
+      {
+        text: "BuyBC License Status Reason",
+        value: "licenseStatusReason",
+        sortable: false,
+      },
+      {
         text: "Last Updated",
         value: "lastUpdated",
         sortable: true,
@@ -342,6 +432,11 @@ export default class Landing extends Vue {
       {
         text: "Details",
         value: "details",
+        sortable: false,
+      },
+      {
+        text: "Actions",
+        value: "actions",
         sortable: false,
       },
     ];
@@ -352,19 +447,79 @@ export default class Landing extends Vue {
           BASE_URL +
           "/v3/credentialtype/" +
           credential.credentials[0].credential_type.id,
-      }).then((res: any) => {
-        this.credTableData.push({
-          issuer: res.data.issuer.name,
-          effectiveDate: this.formatDate(credential.first_effective_date),
-          lastUpdated: this.formatDate(credential.update_timestamp),
-          registrationType:
-            credential.credentials[0].credential_type.description,
-          data: credential,
-        });
-        this.isLoading = false;
+      }).then(async (res: any) => {
+        var licenseStatus = "";
+        var licenseStatusReason = "";
+
+        if (credential.credentials[0].credential_type.id === 15) {
+          // BuyBC License, get active attributes
+          for (let k = 0; k < credential.credentials.length; k++) {
+            if (credential.credentials[k].revoked === true) {
+              // Credential has been revoked
+              await axios({
+                method: "GET",
+                url:
+                  BASE_URL + "/v3/credential/" + credential.credentials[k].id,
+              }).then((res: any) => {
+                console.log("Got revoked cred details: ", res);
+                licenseStatus = res.data.attributes[2].value;
+                licenseStatusReason = res.data.attributes[4].value;
+              });
+              this.credTableData.push({
+                issuer: res.data.issuer.name,
+                effectiveDate: this.formatDate(credential.first_effective_date),
+                lastUpdated: this.formatDate(credential.update_timestamp),
+                licenseStatus: licenseStatus,
+                credentialRevoked: true,
+                credentialLatest: false,
+                licenseStatusReason: licenseStatusReason,
+                registrationType: this.formatRegistrationType(
+                  credential.credentials[0].credential_type.description
+                ),
+                data: credential,
+              });
+            } else {
+              // Credential is active (latest)
+              await axios({
+                method: "GET",
+                url:
+                  BASE_URL + "/v3/credential/" + credential.credentials[k].id,
+              }).then((res: any) => {
+                console.log("Got active cred details: ", res);
+                licenseStatus = res.data.attributes[2].value;
+                licenseStatusReason = res.data.attributes[4].value;
+              });
+              this.credTableData.push({
+                issuer: res.data.issuer.name,
+                effectiveDate: this.formatDate(credential.first_effective_date),
+                lastUpdated: this.formatDate(credential.update_timestamp),
+                licenseStatus: licenseStatus,
+                credentialRevoked: false,
+                credentialLatest: true,
+                licenseStatusReason: licenseStatusReason,
+                registrationType: this.formatRegistrationType(
+                  credential.credentials[0].credential_type.description
+                ),
+                data: credential,
+              });
+              if (licenseStatus === "Active") {
+                this.issueButtonDisabled = true;
+              }
+            }
+          }
+        }
       });
     });
+    this.isLoading = false;
     this.credTableLoaded = true;
+  }
+
+  private formatRegistrationType(registrationType: string): string {
+    if (registrationType === "license.buybc.gov.bc.ca") {
+      return "BuyBC Logo License";
+    } else {
+      return registrationType;
+    }
   }
 
   private viewDetailModal(credential: any) {
@@ -384,15 +539,36 @@ export default class Landing extends Vue {
     this.isIssueModalVisible = !this.isIssueModalVisible;
   }
 
-  private openRevokeModal(details: any) {
-    this.issueCredentialDetails = details;
-    this.viewIssueModal();
+  private revokeCredential(details: any) {
+    this.isLoading = true;
+    axios({
+      url:
+        BASE_URL +
+        "/credential/" +
+        details.data.latest_credential_id +
+        "/formatted",
+    }).then((res: any) => {
+      console.log("DATA: ", res.data);
+      this.issueCredentialDetails = {
+        licenseNumber: res.data.attributes[0].value,
+        licenseType: res.data.attributes[1].value,
+        status: "Inactive",
+        statusReason: "",
+        attributes: res.data.attributes,
+      };
+      this.viewIssueModal();
+      this.isLoading = false;
+    });
   }
 
   private onIssueSuccess(action: string) {
-    action === "ISSUE"
-      ? (this.successText = "BuyBC Credential Issued!")
-      : (this.successText = "BuyBC Credential Revoked!");
+    if (action === "ISSUE") {
+      this.successText = "BuyBC Credential Issued!";
+      this.issueButtonDisabled = true;
+    } else {
+      this.successText = "BuyBC Credential Revoked!";
+      this.issueButtonDisabled = false;
+    }
     this.toggleIssueModal();
     this.isLoading = true;
     this.hasIssuedCredential = true;
@@ -408,12 +584,20 @@ export default class Landing extends Vue {
     var d = new Date(date),
       month = "" + (d.getMonth() + 1),
       day = "" + d.getDate(),
-      year = d.getFullYear();
+      year = d.getFullYear(),
+      hour = d.getHours().toString(),
+      minute = d.getMinutes().toString(),
+      seconds = d.getSeconds().toString();
 
     if (month.length < 2) month = "0" + month;
     if (day.length < 2) day = "0" + day;
+    if (hour.length < 2) hour = "0" + hour;
+    if (minute.length < 2) minute = "0" + minute;
+    if (seconds.length < 2) seconds = "0" + seconds;
 
-    return [year, month, day].join("-");
+    return (
+      [year, month, day].join("-") + " " + [hour, minute, seconds].join(":")
+    );
   }
 
   private formatAttribute(str: string) {
