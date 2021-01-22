@@ -1,5 +1,5 @@
 <template>
-  <v-app-bar app default color="white" >
+  <v-app-bar app default color="white">
     <div class="d-flex align-center">
       <v-img
         class="mr-4"
@@ -8,9 +8,10 @@
         transition="scale-transition"
         width="120"
       />
-      <v-toolbar-title style="color: #6e8337">BuyBC Issue Verifiable Credential Demo</v-toolbar-title>
-      <v-spacer/>
-
+      <v-toolbar-title style="color: #6e8337"
+        >BuyBC Issue Verifiable Credential Demo</v-toolbar-title
+      >
+      <v-spacer />
     </div>
   </v-app-bar>
 </template>
