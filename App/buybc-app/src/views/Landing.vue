@@ -49,8 +49,9 @@
           Registration Details for {{ selectedOrgData.name }}
         </h2>
         <v-data-table
-          v-if="orgTableLoaded"
-          v-show="!isLoading"
+          :loading="isLoading"
+          loading-text="Loading details..."
+          v-show="orgTableLoaded"
           :items-per-page="20"
           mobile-breakpoint="800"
           :headers="orgTableHeaders"
@@ -82,8 +83,9 @@
           BuyBC Licenses held by {{ selectedOrgData.name }}
         </h2>
         <v-data-table
-          v-if="credTableLoaded"
-          v-show="!isLoading"
+          :loading="isLoading"
+          loading-text="Loading licenses..."
+          v-show="credTableLoaded"
           mobile-breakpoint="1500"
           :items-per-page="20"
           :sort-by="['effectiveDate']"
@@ -92,6 +94,10 @@
           :items="credTableData"
           class="elevation-1 mt-4"
         >
+          <template v-slot:no-data>
+            No BuyBC licenses held by {{ selectedOrgData.name }}. Issue a
+            credential below to see it in this table.
+          </template>
           <template v-slot:[`item.licenseStatus`]="{ item }">
             <v-chip :color="getColor(item.licenseStatus)" dark>
               {{ item.licenseStatus }}
@@ -442,7 +448,7 @@ export default class Landing extends Vue {
                 effectiveDate: this.formatDate(credential.first_effective_date),
                 lastUpdated: this.formatDate(credential.update_timestamp),
                 licenseStatus: "Expired",
-                licenseStatusReason: "Credential Revoked",
+                licenseStatusReason: "Credential Expired",
                 registrationType: this.formatRegistrationType(
                   credential.credentials[0].credential_type.description
                 ),
@@ -476,9 +482,9 @@ export default class Landing extends Vue {
             }
           }
         }
-        this.isLoading = false;
       });
     });
+    this.isLoading = false;
     this.credTableLoaded = true;
   }
 
@@ -554,14 +560,18 @@ export default class Landing extends Vue {
       day = "" + d.getDate(),
       year = d.getFullYear(),
       hour = d.getHours().toString(),
-      minute = d.getMinutes().toString();
+      minute = d.getMinutes().toString(),
+      seconds = d.getSeconds().toString();
 
     if (month.length < 2) month = "0" + month;
     if (day.length < 2) day = "0" + day;
     if (hour.length < 2) hour = "0" + hour;
     if (minute.length < 2) minute = "0" + minute;
+    if (seconds.length < 2) seconds = "0" + seconds;
 
-    return [year, month, day].join("-") + " " + [hour, minute].join(":");
+    return (
+      [year, month, day].join("-") + " " + [hour, minute, seconds].join(":")
+    );
   }
 
   private formatAttribute(str: string) {
