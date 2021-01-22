@@ -89,7 +89,6 @@
         <v-row>
           <v-col>
             <v-menu
-              ref="menu"
               v-model="menu"
               :close-on-content-click="false"
               :return-value.sync="licenseEffectiveDate"

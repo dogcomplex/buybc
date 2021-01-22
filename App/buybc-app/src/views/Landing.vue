@@ -22,25 +22,55 @@
     </v-row>
     <v-row class="text-center" align="center" justify="center">
       <v-col cols="7">
-        <v-text-field v-model="name" label="Name"> </v-text-field>
-        <v-btn class="primary mt-2" @click="getBusinessResults(name)"
+        <v-text-field v-model="searchText" label="Business Name">
+        </v-text-field>
+        <v-btn class="primary mt-2" @click="getBusinessResults(searchText)"
           ><v-icon medium class="mr-2">mdi-magnify</v-icon> Search for
           Business</v-btn
         >
         <v-select
-          v-show="hasSearched"
           class="mt-4"
-          ref="select"
+          v-show="hasSearched"
           v-model="selectedOrg"
           :items="searchResults"
           item-text="names[0].text"
           item-value="id"
-          label="Select a business"
+          :label="
+            numBusinessesFound +
+              ' results found (Showing ' +
+              firstIndex +
+              ' to ' +
+              lastIndex +
+              ' of ' +
+              numBusinessesFound +
+              ')'
+          "
           outlined
           persistent-hint
           return-object
           single-line
         ></v-select>
+        <v-row
+          v-show="hasSearched && !hasSelected"
+          align="center"
+          justify="center"
+        >
+          <v-col align="right" justify="right">
+            <v-btn
+              @click="getPrevPage()"
+              :disabled="this.prevPage === null || this.prevPage === ''"
+              >Previous Page</v-btn
+            >
+          </v-col>
+          <v-col align="left" justify="left">
+            <v-btn
+              @click="getNextPage()"
+              :disabled="this.nextPage === null || this.nextPage === ''"
+              >Next Page</v-btn
+            >
+          </v-col>
+        </v-row>
+
         <h2
           v-if="orgTableLoaded"
           v-show="!isLoading"
@@ -88,7 +118,7 @@
           v-show="credTableLoaded"
           mobile-breakpoint="1500"
           :items-per-page="20"
-          :sort-by="['effectiveDate']"
+          :sort-by="['issueDate']"
           :sort-desc="['true']"
           :headers="credTableHeaders"
           :items="credTableData"
@@ -130,8 +160,8 @@
         </v-data-table>
         <div v-if="credTableLoaded" v-show="!isLoading" class="mt-2">
           You can view a list of all credentials held by
-          {{ selectedOrgData.name }}
-          <a @click="openOrgBook()">here.</a>
+          {{ selectedOrgData.name }} on
+          <a @click="openOrgBook()">OrgBook BC</a>
         </div>
         <v-alert
           class="mt-2"
@@ -161,7 +191,6 @@
         <v-btn
           v-if="orgTableLoaded"
           v-show="!isLoading"
-          :disabled="issueButtonDisabled"
           class="warning mt-5"
           @click="viewIssueModal()"
           ><v-icon class="mr-2" medium>mdi-license</v-icon> Issue a credential
@@ -211,7 +240,7 @@ export default class Landing extends Vue {
   private isIssueModalVisible = false;
   private credentials: any[] = [];
   private searchResults: any[] = [];
-  private name = "";
+  private searchText = "";
   private issueCredentialDetails: {} = {};
   private successText: string = "";
   private selectedOrg: {
@@ -254,13 +283,18 @@ export default class Landing extends Vue {
   private credTableHeaders: any[] = [];
   private credTableData: any[] = [];
 
-  private issueButtonDisabled: boolean = false;
-
   private orgTableLoaded = false;
   private credTableLoaded = false;
 
   private hasSearched = false;
   private hasSelected = false;
+
+  private numBusinessesFound = 0;
+  private page = 1;
+  private firstIndex = 1;
+  private lastIndex = 20;
+  private nextPage = "";
+  private prevPage = "";
 
   private mounted() {}
 
@@ -295,16 +329,51 @@ export default class Landing extends Vue {
     this.credTableData = [];
     axios({
       method: "GET",
-      url: BASE_URL + "/v4/search/topic/facets?q=" + searchText,
+      url:
+        BASE_URL +
+        "/v4/search/topic/facets?q=" +
+        searchText +
+        "&page_size=10&page=1",
     }).then((res: any) => {
+      this.numBusinessesFound = res.data.objects.total;
+      this.page = res.data.objects.page;
       this.searchResults = res.data.objects.results;
+      this.firstIndex = res.data.objects.first_index;
+      this.lastIndex = res.data.objects.last_index;
+      this.nextPage = res.data.objects.next;
       this.hasSearched = true;
-      console.log(this.$refs.select);
-      this.$nextTick(() => {
-        (this.$refs.select as Vue & {
-          focus: () => any;
-        }).focus();
-      });
+      this.isLoading = false;
+    });
+  }
+
+  private getNextPage() {
+    this.isLoading = true;
+    axios({
+      method: "GET",
+      url: this.nextPage,
+    }).then((res: any) => {
+      this.page = res.data.objects.page;
+      this.searchResults = res.data.objects.results;
+      this.firstIndex = res.data.objects.first_index;
+      this.lastIndex = res.data.objects.last_index;
+      this.nextPage = res.data.objects.next;
+      this.prevPage = res.data.objects.previous;
+      this.isLoading = false;
+    });
+  }
+
+  private getPrevPage() {
+    this.isLoading = true;
+    axios({
+      method: "GET",
+      url: this.prevPage,
+    }).then((res: any) => {
+      this.page = res.data.objects.page;
+      this.searchResults = res.data.objects.results;
+      this.firstIndex = res.data.objects.first_index;
+      this.lastIndex = res.data.objects.last_index;
+      this.nextPage = res.data.objects.next;
+      this.prevPage = res.data.objects.previous;
       this.isLoading = false;
     });
   }
@@ -314,6 +383,9 @@ export default class Landing extends Vue {
     this.isLoading = true;
     this.orgTableData = [];
     this.orgTableHeaders = [];
+    this.searchText = "";
+    this.hasIssuedCredential = false;
+    this.issueCredentialFailed = false;
     this.selectedOrgData = {
       id: -1,
       attributes: [],
@@ -385,13 +457,10 @@ export default class Landing extends Vue {
 
   private async loadCredTable() {
     this.credTableData = [];
-    this.credentials.forEach((credential: any) => {
-      credential.credentials.forEach((cred: any) => {});
-    });
     this.credTableHeaders = [
       {
-        text: "Date Effective",
-        value: "effectiveDate",
+        text: "Date Created",
+        value: "issueDate",
         sortable: true,
       },
       {
@@ -405,16 +474,6 @@ export default class Landing extends Vue {
         sortable: false,
       },
       {
-        text: "Credential Revoked?",
-        value: "credentialRevoked",
-        sortable: false,
-      },
-      {
-        text: "Credential Latest?",
-        value: "credentialLatest",
-        sortable: false,
-      },
-      {
         text: "BuyBC License Status",
         value: "licenseStatus",
         sortable: false,
@@ -425,8 +484,13 @@ export default class Landing extends Vue {
         sortable: false,
       },
       {
-        text: "Last Updated",
-        value: "lastUpdated",
+        text: "BuyBC License Number",
+        value: "licenseNumber",
+        sortable: true,
+      },
+      {
+        text: "Date Effective",
+        value: "effectiveDate",
         sortable: true,
       },
       {
@@ -450,6 +514,8 @@ export default class Landing extends Vue {
       }).then(async (res: any) => {
         var licenseStatus = "";
         var licenseStatusReason = "";
+        var licenseNumber = "";
+        var issueDate = "";
 
         if (credential.credentials[0].credential_type.id === 15) {
           // BuyBC License, get active attributes
@@ -460,18 +526,20 @@ export default class Landing extends Vue {
                 method: "GET",
                 url:
                   BASE_URL + "/v3/credential/" + credential.credentials[k].id,
-              }).then((res: any) => {
+              }).then(async (res: any) => {
                 console.log("Got revoked cred details: ", res);
                 licenseStatus = res.data.attributes[2].value;
                 licenseStatusReason = res.data.attributes[4].value;
+                licenseNumber = res.data.attributes[0].value;
+                issueDate = res.data.attributes[6].value;
               });
               this.credTableData.push({
                 issuer: res.data.issuer.name,
                 effectiveDate: this.formatDate(credential.first_effective_date),
-                lastUpdated: this.formatDate(credential.update_timestamp),
                 licenseStatus: licenseStatus,
                 credentialRevoked: true,
-                credentialLatest: false,
+                issueDate: this.formatDate(issueDate), // TODO: FIX THIS
+                licenseNumber: licenseNumber,
                 licenseStatusReason: licenseStatusReason,
                 registrationType: this.formatRegistrationType(
                   credential.credentials[0].credential_type.description
@@ -488,23 +556,22 @@ export default class Landing extends Vue {
                 console.log("Got active cred details: ", res);
                 licenseStatus = res.data.attributes[2].value;
                 licenseStatusReason = res.data.attributes[4].value;
+                licenseNumber = res.data.attributes[0].value;
+                issueDate = res.data.attributes[6].value;
               });
               this.credTableData.push({
                 issuer: res.data.issuer.name,
                 effectiveDate: this.formatDate(credential.first_effective_date),
-                lastUpdated: this.formatDate(credential.update_timestamp),
                 licenseStatus: licenseStatus,
                 credentialRevoked: false,
-                credentialLatest: true,
+                issueDate: this.formatDate(issueDate), // TODO: FIX THIS
+                licenseNumber: licenseNumber,
                 licenseStatusReason: licenseStatusReason,
                 registrationType: this.formatRegistrationType(
                   credential.credentials[0].credential_type.description
                 ),
                 data: credential,
               });
-              if (licenseStatus === "Active") {
-                this.issueButtonDisabled = true;
-              }
             }
           }
         }
@@ -564,10 +631,8 @@ export default class Landing extends Vue {
   private onIssueSuccess(action: string) {
     if (action === "ISSUE") {
       this.successText = "BuyBC Credential Issued!";
-      this.issueButtonDisabled = true;
     } else {
       this.successText = "BuyBC Credential Revoked!";
-      this.issueButtonDisabled = false;
     }
     this.toggleIssueModal();
     this.isLoading = true;
