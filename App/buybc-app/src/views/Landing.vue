@@ -103,6 +103,16 @@
               {{ item.licenseStatus }}
             </v-chip>
           </template>
+          <template v-slot:[`item.credentialRevoked`]="{ item }">
+            <v-chip :color="getColor(item.credentialRevoked)" dark>
+              {{ item.credentialRevoked }}
+            </v-chip>
+          </template>
+          <template v-slot:[`item.credentialLatest`]="{ item }">
+            <v-chip :color="getColor(item.credentialLatest)" dark>
+              {{ item.credentialLatest }}
+            </v-chip>
+          </template>
           <template v-slot:[`item.details`]="{ item }">
             <v-btn @click="viewDetailModal(item)">View</v-btn>
           </template>
@@ -110,7 +120,7 @@
             <v-btn
               :disabled="
                 item.licenseStatus === 'Inactive' ||
-                  item.licenseStatus === 'Expired'
+                  item.credentialRevoked === true
               "
               class="error"
               @click="revokeCredential(item)"
@@ -267,8 +277,10 @@ export default class Landing extends Vue {
       return "#4CAF50";
     } else if (status === "Inactive") {
       return "#F44336";
-    } else if (status === "Expired") {
-      return "#FF9800";
+    } else if (status.toString() === "true") {
+      return "#2196F3";
+    } else if (status.toString() === "false") {
+      return "#9E9E9E";
     }
   }
 
@@ -393,6 +405,16 @@ export default class Landing extends Vue {
         sortable: false,
       },
       {
+        text: "Credential Revoked?",
+        value: "credentialRevoked",
+        sortable: false,
+      },
+      {
+        text: "Credential Latest?",
+        value: "credentialLatest",
+        sortable: false,
+      },
+      {
         text: "BuyBC License Status",
         value: "licenseStatus",
         sortable: false,
@@ -447,8 +469,10 @@ export default class Landing extends Vue {
                 issuer: res.data.issuer.name,
                 effectiveDate: this.formatDate(credential.first_effective_date),
                 lastUpdated: this.formatDate(credential.update_timestamp),
-                licenseStatus: "Expired",
-                licenseStatusReason: "Credential Expired",
+                licenseStatus: licenseStatus,
+                credentialRevoked: true,
+                credentialLatest: false,
+                licenseStatusReason: licenseStatusReason,
                 registrationType: this.formatRegistrationType(
                   credential.credentials[0].credential_type.description
                 ),
@@ -470,6 +494,8 @@ export default class Landing extends Vue {
                 effectiveDate: this.formatDate(credential.first_effective_date),
                 lastUpdated: this.formatDate(credential.update_timestamp),
                 licenseStatus: licenseStatus,
+                credentialRevoked: false,
+                credentialLatest: true,
                 licenseStatusReason: licenseStatusReason,
                 registrationType: this.formatRegistrationType(
                   credential.credentials[0].credential_type.description
