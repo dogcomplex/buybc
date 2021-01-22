@@ -78,7 +78,7 @@
           v-show="!isLoading"
           class="font-weight-light display-0 mt-8"
         >
-          Credentials held by {{ selectedOrgData.name }}
+          BuyBC Licenses held by {{ selectedOrgData.name }}
         </h2>
         <v-data-table
           v-if="credTableLoaded"
@@ -94,6 +94,11 @@
             <v-btn @click="viewDetailModal(item)">View</v-btn>
           </template>
         </v-data-table>
+        <div v-if="credTableLoaded" v-show="!isLoading" class="mt-2">
+          You can view a list of all credentials held by
+          {{ selectedOrgData.name }}
+          <a @click="openOrgBook()">here.</a>
+        </div>
         <v-alert
           class="mt-2"
           v-show="hasIssuedCredential"
@@ -122,6 +127,7 @@
         <v-btn
           v-if="orgTableLoaded"
           v-show="!isLoading"
+          :disabled="issueButtonDisabled"
           class="warning mt-5"
           @click="viewIssueModal()"
           ><v-icon class="mr-2" medium>mdi-license</v-icon> Issue a credential
@@ -215,6 +221,8 @@ export default class Landing extends Vue {
   private credTableHeaders: any[] = [];
   private credTableData: any[] = [];
 
+  private issueButtonDisabled: boolean = false;
+
   private orgTableLoaded = false;
   private credTableLoaded = false;
 
@@ -222,6 +230,14 @@ export default class Landing extends Vue {
   private hasSelected = false;
 
   private mounted() {}
+
+  private openOrgBook() {
+    window.open(
+      "https://dev.orgbook.gov.bc.ca/en/organization/registration.registries.ca/" +
+        this.selectedOrgData.registrationId,
+      "_blank"
+    );
+  }
 
   private getBusinessResults(searchText: string) {
     this.isLoading = true;
@@ -389,17 +405,20 @@ export default class Landing extends Vue {
             licenseStatus = res.data.attributes[2].value;
             licenseStatusReason = res.data.attributes[4].value;
           });
+          this.credTableData.push({
+            issuer: res.data.issuer.name,
+            effectiveDate: this.formatDate(credential.first_effective_date),
+            lastUpdated: this.formatDate(credential.update_timestamp),
+            licenseStatus: licenseStatus,
+            licenseStatusReason: licenseStatusReason,
+            registrationType:
+              credential.credentials[0].credential_type.description,
+            data: credential,
+          });
+          if (licenseStatus === "Active") {
+            this.issueButtonDisabled = true;
+          }
         }
-        this.credTableData.push({
-          issuer: res.data.issuer.name,
-          effectiveDate: this.formatDate(credential.first_effective_date),
-          lastUpdated: this.formatDate(credential.update_timestamp),
-          licenseStatus: licenseStatus,
-          licenseStatusReason: licenseStatusReason,
-          registrationType:
-            credential.credentials[0].credential_type.description,
-          data: credential,
-        });
         this.isLoading = false;
       });
     });
@@ -429,9 +448,13 @@ export default class Landing extends Vue {
   }
 
   private onIssueSuccess(action: string) {
-    action === "ISSUE"
-      ? (this.successText = "BuyBC Credential Issued!")
-      : (this.successText = "BuyBC Credential Revoked!");
+    if (action === "ISSUE") {
+      this.successText = "BuyBC Credential Issued!";
+      this.issueButtonDisabled = true;
+    } else {
+      this.successText = "BuyBC Credential Revoked!";
+      this.issueButtonDisabled = false;
+    }
     this.toggleIssueModal();
     this.isLoading = true;
     this.hasIssuedCredential = true;
