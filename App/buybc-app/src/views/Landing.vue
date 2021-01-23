@@ -164,7 +164,7 @@
               <span
                 >Licenses can only be revoked <br />
                 if they are active and have not <br />
-                already been revoked.</span
+                previously been revoked.</span
               >
             </v-tooltip>
           </template>
