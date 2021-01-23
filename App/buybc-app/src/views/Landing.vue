@@ -22,53 +22,47 @@
     </v-row>
     <v-row class="text-center" align="center" justify="center">
       <v-col cols="7">
-        <v-text-field v-model="searchText" label="Business Name">
+        <v-text-field
+          v-model="searchText"
+          label="Business Name or Registration Number (BC0123456)"
+        >
         </v-text-field>
         <v-btn class="primary mt-2" @click="getBusinessResults(searchText)"
           ><v-icon medium class="mr-2">mdi-magnify</v-icon> Search for
           Business</v-btn
         >
-        <v-select
+        <v-data-table
           class="mt-4"
-          v-show="hasSearched"
-          v-model="selectedOrg"
+          @click:row="handleClick"
+          v-show="hasSearched && !hasSelected"
           :items="searchResults"
-          item-text="names[0].text"
-          item-value="id"
-          :label="
-            numBusinessesFound +
-              ' results found (Showing ' +
-              firstIndex +
-              ' to ' +
-              lastIndex +
-              ' of ' +
-              numBusinessesFound +
-              ')'
-          "
-          outlined
-          persistent-hint
-          return-object
-          single-line
-        ></v-select>
+          :headers="searchResultTableHeaders"
+          :page.sync="page"
+          hide-default-footer
+        >
+          <template v-slot:top>
+            <v-toolbar flat>
+              <v-toolbar-title
+                >Results (Showing {{ firstIndex }} to {{ lastIndex }} of
+                {{ numBusinessesFound }})</v-toolbar-title
+              >
+            </v-toolbar>
+          </template>
+        </v-data-table>
         <v-row
           v-show="hasSearched && !hasSelected"
           align="center"
           justify="center"
+          :items="searchResults"
+          :headers="searchResultTableHeaders"
         >
-          <v-col align="right" justify="right">
-            <v-btn
-              @click="getPrevPage()"
-              :disabled="this.prevPage === null || this.prevPage === ''"
-              >Previous Page</v-btn
-            >
-          </v-col>
-          <v-col align="left" justify="left">
-            <v-btn
-              @click="getNextPage()"
-              :disabled="this.nextPage === null || this.nextPage === ''"
-              >Next Page</v-btn
-            >
-          </v-col>
+          <div class="text-center pt-2">
+            <v-pagination
+              v-model="page"
+              :length="Math.ceil(numBusinessesFound / 10)"
+              :total-visible="10"
+            ></v-pagination>
+          </div>
         </v-row>
 
         <h2
@@ -116,7 +110,7 @@
           :loading="isLoading"
           loading-text="Loading licenses..."
           v-show="credTableLoaded"
-          mobile-breakpoint="1500"
+          mobile-breakpoint="1700"
           :items-per-page="20"
           :sort-by="['issueDate']"
           :sort-desc="['true']"
@@ -260,6 +254,18 @@ export default class Landing extends Vue {
     inactive: true,
     revoked: false,
   };
+  private searchResultTableHeaders: any[] = [
+    {
+      text: "Business Name",
+      value: "names[0].text",
+      sortable: false,
+    },
+    {
+      text: "Business Number",
+      value: "source_id",
+      sortable: false,
+    },
+  ];
   private selectedOrgData: {
     id: number;
     attributes: any[];
@@ -318,6 +324,11 @@ export default class Landing extends Vue {
     }
   }
 
+  private handleClick(row: any) {
+    console.log(row);
+    this.selectedOrg = row;
+  }
+
   private getBusinessResults(searchText: string) {
     this.isLoading = true;
     this.orgTableLoaded = false;
@@ -335,45 +346,35 @@ export default class Landing extends Vue {
         searchText +
         "&page_size=10&page=1",
     }).then((res: any) => {
+      console.log(res);
       this.numBusinessesFound = res.data.objects.total;
       this.page = res.data.objects.page;
       this.searchResults = res.data.objects.results;
       this.firstIndex = res.data.objects.first_index;
       this.lastIndex = res.data.objects.last_index;
-      this.nextPage = res.data.objects.next;
       this.hasSearched = true;
       this.isLoading = false;
     });
   }
 
-  private getNextPage() {
+  @Watch("page")
+  private onPageChanged(page: any) {
     this.isLoading = true;
     axios({
       method: "GET",
-      url: this.nextPage,
+      url:
+        BASE_URL +
+        "/v4/search/topic/facets?q=" +
+        this.searchText +
+        "&page_size=10&page=" +
+        this.page,
     }).then((res: any) => {
+      console.log(res);
       this.page = res.data.objects.page;
       this.searchResults = res.data.objects.results;
       this.firstIndex = res.data.objects.first_index;
       this.lastIndex = res.data.objects.last_index;
-      this.nextPage = res.data.objects.next;
-      this.prevPage = res.data.objects.previous;
-      this.isLoading = false;
-    });
-  }
-
-  private getPrevPage() {
-    this.isLoading = true;
-    axios({
-      method: "GET",
-      url: this.prevPage,
-    }).then((res: any) => {
-      this.page = res.data.objects.page;
-      this.searchResults = res.data.objects.results;
-      this.firstIndex = res.data.objects.first_index;
-      this.lastIndex = res.data.objects.last_index;
-      this.nextPage = res.data.objects.next;
-      this.prevPage = res.data.objects.previous;
+      this.hasSearched = true;
       this.isLoading = false;
     });
   }
@@ -674,3 +675,14 @@ export default class Landing extends Vue {
   }
 }
 </script>
+<style>
+.v-data-table
+  /deep/
+  tbody
+  /deep/
+  tr:hover:not(.v-data-table__expanded__content) {
+  transition: 0.2s linear;
+  background: #bbdefb !important;
+  cursor: pointer;
+}
+</style>
