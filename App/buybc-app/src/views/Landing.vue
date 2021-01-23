@@ -32,7 +32,7 @@
           Business</v-btn
         >
         <v-data-table
-          class="mt-4"
+          class="mt-4 search-table"
           @click:row="handleClick"
           v-show="hasSearched && !hasSelected"
           :items="searchResults"
@@ -141,15 +141,32 @@
             <v-btn @click="viewDetailModal(item)">View</v-btn>
           </template>
           <template v-slot:[`item.actions`]="{ item }">
-            <v-btn
+            <v-tooltip
+              right
               :disabled="
-                item.licenseStatus === 'Inactive' ||
-                  item.credentialRevoked === true
+                item.licenseStatus === 'Active' &&
+                  item.credentialRevoked === false
               "
-              class="error"
-              @click="revokeCredential(item)"
-              >Revoke</v-btn
             >
+              <template v-slot:activator="{ on, attrs }">
+                <div v-on="on" v-bind="attrs">
+                  <v-btn
+                    :disabled="
+                      item.licenseStatus === 'Inactive' ||
+                        item.credentialRevoked === true
+                    "
+                    class="error"
+                    @click="revokeCredential(item)"
+                    >Revoke</v-btn
+                  >
+                </div>
+              </template>
+              <span
+                >Licenses can only be revoked <br />
+                if they are active and have not <br />
+                already been revoked.</span
+              >
+            </v-tooltip>
           </template>
         </v-data-table>
         <div v-if="credTableLoaded" v-show="!isLoading" class="mt-2">
@@ -354,6 +371,8 @@ export default class Landing extends Vue {
       this.lastIndex = res.data.objects.last_index;
       this.hasSearched = true;
       this.isLoading = false;
+      this.hasIssuedCredential = false;
+      this.issueCredentialFailed = false;
     });
   }
 
@@ -675,8 +694,8 @@ export default class Landing extends Vue {
   }
 }
 </script>
-<style>
-.v-data-table
+<style scoped>
+.search-table
   /deep/
   tbody
   /deep/
