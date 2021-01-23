@@ -34,7 +34,7 @@
         <v-data-table
           class="mt-4 search-table"
           @click:row="handleClick"
-          v-show="hasSearched && !hasSelected"
+          v-show="hasSearched"
           :items="searchResults"
           :headers="searchResultTableHeaders"
           :page.sync="page"
@@ -50,13 +50,13 @@
           </template>
         </v-data-table>
         <v-row
-          v-show="hasSearched && !hasSelected"
+          v-show="hasSearched"
           align="center"
           justify="center"
           :items="searchResults"
           :headers="searchResultTableHeaders"
         >
-          <div class="text-center pt-2">
+          <div class="text-center pt-2 pb-4">
             <v-pagination
               v-model="page"
               :length="Math.ceil(numBusinessesFound / 10)"
@@ -64,7 +64,7 @@
             ></v-pagination>
           </div>
         </v-row>
-
+        <v-divider class="my-2 divider" v-if="orgTableLoaded"></v-divider>
         <h2
           v-if="orgTableLoaded"
           v-show="!isLoading"
@@ -703,5 +703,9 @@ export default class Landing extends Vue {
   transition: 0.2s linear;
   background: #bbdefb !important;
   cursor: pointer;
+}
+
+.divider {
+  border-width: 2px 0 0 !important;
 }
 </style>
