@@ -537,7 +537,7 @@ export default class Landing extends Vue {
         var licenseNumber = "";
         var issueDate = "";
 
-        if (credential.credentials[0].credential_type.id === 15) {
+        if (credential.credentials[0].credential_type.id === 8) {
           // BuyBC License, get active attributes
           for (let k = 0; k < credential.credentials.length; k++) {
             if (credential.credentials[k].revoked === true) {

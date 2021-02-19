@@ -249,7 +249,7 @@ export default class IssueCredentialModal extends Vue {
     for (let i = 0; i < this.credentials.length; i++) {
       for (let k = 0; k < this.credentials[i].credentials.length; k++) {
         // Search credentials belonging to this holder
-        if (this.credentials[i].credentials[k].credential_type.id === 15) {
+        if (this.credentials[i].credentials[k].credential_type.id === 8) {
           // Credential comes from BuyBC
           await axios({
             method: "GET",
